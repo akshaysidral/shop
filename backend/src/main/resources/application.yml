@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/shop}
+    username: ${DB_USER:shop}
+    password: ${DB_PASSWORD:shop}
+  jpa:
+    hibernate.ddl-auto: update   # switch to Flyway migrations for production
+    open-in-view: false
+app:
+  # First admin. DEV DEFAULTS ONLY: override APP_ADMIN_EMAIL / APP_ADMIN_PASSWORD in any real environment.
+  # If the user already exists they are simply given the ADMIN role. Blank email = no bootstrap.
+  bootstrap-admin:
+    email: ${APP_ADMIN_EMAIL:admin@shop.local}
+    password: ${APP_ADMIN_PASSWORD:Admin@12345}
+  # Marketplace commission charged on each sale, in percent. Individual sellers can have their own rate (3, 5, ...).
+  commission:
+    default-percent: ${APP_COMMISSION_DEFAULT:5}
+  # Demo seller that owns the sample products. DEV DEFAULTS ONLY; blank email = no demo seller / no sample data owner.
+  bootstrap-seller:
+    email: ${APP_SELLER_EMAIL:seller@bazario.local}
+    password: ${APP_SELLER_PASSWORD:Seller@12345}
+    store-name: ${APP_SELLER_STORE:Bazario Mart}
+    commission-percent: 5          # standard seller
+  # Second demo seller on the lower, preferred rate.
+  bootstrap-seller-2:
+    email: ${APP_SELLER2_EMAIL:seller2@bazario.local}
+    password: ${APP_SELLER2_PASSWORD:Seller2@12345}
+    store-name: ${APP_SELLER2_STORE:Preferred Picks}
+    commission-percent: 3          # preferred seller
+  cors-origin: ${APP_CORS_ORIGIN:http://localhost:5173}
+  jwt:
+    secret: ${APP_JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+    expiration-ms: 86400000
+server:
+  error:
+    include-message: always
+management:
+  endpoints.web.exposure.include: health

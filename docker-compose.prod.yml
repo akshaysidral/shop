@@ -1,0 +1,39 @@
+# Used on the server by the deploy job. Needs a .env next to it (see .env.example).
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      retries: 10
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:latest
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/shop
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_CORS_ORIGIN: ${APP_CORS_ORIGIN}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD}
+      APP_SELLER_EMAIL: ${APP_SELLER_EMAIL:-}
+      APP_SELLER_PASSWORD: ${APP_SELLER_PASSWORD:-}
+      APP_SELLER2_EMAIL: ${APP_SELLER2_EMAIL:-}
+      APP_SELLER2_PASSWORD: ${APP_SELLER2_PASSWORD:-}
+      APP_COMMISSION_DEFAULT: ${APP_COMMISSION_DEFAULT:-5}
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8080:8080"]
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:latest
+    restart: unless-stopped
+    ports: ["80:80"]
+volumes:
+  pgdata: {}
