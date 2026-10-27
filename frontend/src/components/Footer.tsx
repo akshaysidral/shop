@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
@@ -30,13 +30,13 @@ export default function Footer() {
             </Typography>
           </Box>
           <Column title="Shop">
-            <Link component={RouterLink} to="/" {...link}>All products</Link>
-            <Link component={RouterLink} to="/cart" {...link}>Cart</Link>
-            <Link component={RouterLink} to="/orders" {...link}>My orders</Link>
+            <Link component={NextLink} href="/" {...link}>All products</Link>
+            <Link component={NextLink} href="/cart" {...link}>Cart</Link>
+            <Link component={NextLink} href="/orders" {...link}>My orders</Link>
           </Column>
           <Column title="Sellers">
-            <Link component={RouterLink} to="/login" state={{ mode: "register", accountType: "SELLER" }} {...link}>Sell on Bazario</Link>
-            <Link component={RouterLink} to="/seller" {...link}>Seller Hub</Link>
+            <Link component={NextLink} href="/login?mode=register&accountType=SELLER" {...link}>Sell on Bazario</Link>
+            <Link component={NextLink} href="/seller" {...link}>Seller Hub</Link>
           </Column>
         </Box>
         <Divider sx={{ my: 2, borderColor: "rgba(255,255,255,0.15)" }} />

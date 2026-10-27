@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -13,13 +13,17 @@ import { api, errMsg } from "./api";
 import { BuyButton } from "./components/Buttons";
 import { BagIcon } from "./icons";
 import { brand } from "./theme";
+import { useAuth } from "./AuthContext";
 
 type AccountType = "BUYER" | "SELLER";
-type NavState = { from?: string; mode?: "login" | "register"; accountType?: AccountType } | null;
-
-export default function LoginPage({ onAuth }: { onAuth: () => void | Promise<void> }) {
-  const location = useLocation();
-  const hint = location.state as NavState;
+export default function LoginPage({ onAuth }: { onAuth?: () => void | Promise<void> } = {}) {
+  const params = useSearchParams();
+  const { refresh } = useAuth();
+  const hint = {
+    from: params.get("from") ?? undefined,
+    mode: params.get("mode") === "register" ? "register" as const : undefined,
+    accountType: params.get("accountType") === "SELLER" ? "SELLER" as const : undefined,
+  };
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +32,7 @@ export default function LoginPage({ onAuth }: { onAuth: () => void | Promise<voi
   const [storeName, setStoreName] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  const nav = useNavigate();
+  const router = useRouter();
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -41,9 +45,9 @@ export default function LoginPage({ onAuth }: { onAuth: () => void | Promise<voi
           : { email, password, accountType };
       const r = await api.post<{ token: string }>(`/auth/${mode}`, body);
       localStorage.setItem("token", r.data.token);
-      await onAuth();
+      await (onAuth ?? refresh)();
       const fallback = mode === "register" && accountType === "SELLER" ? "/seller" : "/";
-      nav(hint?.from ?? fallback, { replace: true });
+      router.replace(hint.from ?? fallback);
     } catch (err) {
       setMsg(errMsg(err, "Request failed (password needs 6+ chars)"));
     } finally {

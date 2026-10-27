@@ -24,7 +24,7 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 |---|---|---|
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | local Postgres, `shop` / `shop` | database |
 | `APP_JWT_SECRET` | dev-only string | JWT signing key, **32+ characters, change in production** |
-| `APP_CORS_ORIGIN` | `http://localhost:5173` | allowed browser origin(s) |
+| `APP_CORS_ORIGIN` | `http://localhost:3000,http://localhost:3001` | allowed browser origin(s) |
 | `APP_COMMISSION_DEFAULT` | `5` | commission percent given to newly registered sellers |
 | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` | `admin@shop.local` / `Admin@12345` | first admin (blank email = none) |
 | `APP_SELLER_EMAIL`, `APP_SELLER_PASSWORD`, `APP_SELLER_STORE` | `seller@bazario.local` / `Seller@12345` / `Bazario Mart` | demo seller at 5% (blank = none) |

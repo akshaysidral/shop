@@ -1,19 +1,12 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route, Routes } from "react-router-dom";
 import ProductDetail from "./ProductDetail";
 import { CartCount, makeProduct, renderApp, routeGet } from "./testUtils";
 
 const show = (product: ReturnType<typeof makeProduct> | Error) => {
   routeGet({ "/products/1": product });
   // CartCount lives outside the route so it survives the move to /cart
-  return renderApp(
-    <>
-      <Routes><Route path="/product/:id" element={<ProductDetail />} /></Routes>
-      <CartCount />
-    </>,
-    { route: "/product/1" },
-  );
+  return renderApp(<><ProductDetail /><CartCount /></>, { route: "/product/1" });
 };
 
 describe("ProductDetail", () => {

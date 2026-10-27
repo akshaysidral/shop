@@ -14,14 +14,14 @@ const ORDER: Order = {
 describe("OrdersPage", () => {
   it("asks guests to log in", () => {
     renderApp(<OrdersPage />);
-    expect(screen.getByRole("link", { name: "login" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "login" })).toHaveAttribute("href", "/login?from=%2Forders");
     expect(screen.getByText(/to see your orders/i)).toBeInTheDocument();
   });
 
   it("lists orders with each line, its seller and its own status", async () => {
     localStorage.setItem("token", "t");
     routeGet({ "/orders": [ORDER] });
-    renderApp(<OrdersPage />);
+    renderApp(<OrdersPage />, { permissions: [] });
     expect(await screen.findByText("Order #7")).toBeInTheDocument();
     expect(screen.getByText("Mouse")).toBeInTheDocument();
     expect(screen.getByText(/Sold by Acme/)).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe("OrdersPage", () => {
   it("shows line totals and the order total", async () => {
     localStorage.setItem("token", "t");
     routeGet({ "/orders": [ORDER] });
-    renderApp(<OrdersPage />);
+    renderApp(<OrdersPage />, { permissions: [] });
     await screen.findByText("Order #7");
     expect(screen.getByText(/Qty 2 x/)).toHaveTextContent("800");
     expect(screen.getAllByText(/1,600/).length).toBeGreaterThan(0);
@@ -42,7 +42,7 @@ describe("OrdersPage", () => {
   it("invites the buyer to shop when there are no orders", async () => {
     localStorage.setItem("token", "t");
     routeGet({ "/orders": [] });
-    renderApp(<OrdersPage />);
+    renderApp(<OrdersPage />, { permissions: [] });
     expect(await screen.findByText(/no orders yet/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /start shopping/i })).toBeInTheDocument();
   });
@@ -50,7 +50,7 @@ describe("OrdersPage", () => {
   it("shows an error when the orders cannot be loaded", async () => {
     localStorage.setItem("token", "t");
     routeGet({ "/orders": new Error("boom") });
-    renderApp(<OrdersPage />);
+    renderApp(<OrdersPage />, { permissions: [] });
     expect(await screen.findByText(/could not load your orders/i)).toBeInTheDocument();
   });
 });

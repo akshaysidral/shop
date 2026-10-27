@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -28,7 +28,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column", transition: "transform .15s, box-shadow .15s",
                                    "&:hover": { transform: "translateY(-3px)", boxShadow: 6 } }}>
-      <Box component={RouterLink} to={`/product/${product.id}`} sx={{ position: "relative", display: "block", color: "inherit", textDecoration: "none", flexGrow: 1 }}>
+      <Box component={NextLink} href={`/product/${product.id}`} sx={{ position: "relative", display: "block", color: "inherit", textDecoration: "none", flexGrow: 1 }}>
         {product.discountPercent > 0 && (
           <Box component="span" sx={{ position: "absolute", top: 8, left: 8, zIndex: 1, bgcolor: "error.main", color: "#fff",
                                       fontWeight: 700, fontSize: "0.78rem", px: 1, py: 0.25, borderRadius: 99 }}>

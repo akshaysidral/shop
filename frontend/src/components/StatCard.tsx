@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -21,7 +21,7 @@ export default function StatCard({ icon, label, value, to }: { icon: ReactNode; 
   );
   return (
     <Card variant="outlined" sx={{ height: "100%" }}>
-      {to ? <CardActionArea component={RouterLink} to={to} sx={{ height: "100%" }}>{body}</CardActionArea> : body}
+      {to ? <CardActionArea component={NextLink} href={to} sx={{ height: "100%" }}>{body}</CardActionArea> : body}
     </Card>
   );
 }

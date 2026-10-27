@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import NextLink from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
@@ -19,7 +20,7 @@ import { useFetch } from "./useFetch";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const nav = useNavigate();
+  const router = useRouter();
   const { add } = useCart();
   const { data: product, loading, error } = useFetch<Product>(`/products/${id}`);
   const [qty, setQty] = useState(1);
@@ -27,7 +28,7 @@ export default function ProductDetail() {
 
   if (loading) return <Loading />;
   if (error || !product) {
-    return <Alert severity="warning">We could not find this product. <Link component={RouterLink} to="/">Back to shop</Link></Alert>;
+    return <Alert severity="warning">We could not find this product. <Link component={NextLink} href="/">Back to shop</Link></Alert>;
   }
 
   const out = product.stock <= 0;
@@ -38,9 +39,9 @@ export default function ProductDetail() {
       <ProductImage name={product.name} src={product.imageUrl} size="lg" />
       <Box>
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 1, fontSize: "0.85rem" }}>
-          <Link component={RouterLink} to="/" underline="hover">Home</Link>
+          <Link component={NextLink} href="/" underline="hover">Home</Link>
           {product.categoryId && (
-            <Link component={RouterLink} to={`/?category=${product.categoryId}`} underline="hover">{product.categoryName}</Link>
+            <Link component={NextLink} href={`/?category=${product.categoryId}`} underline="hover">{product.categoryName}</Link>
           )}
           <Typography color="text.primary" variant="body2">{product.name}</Typography>
         </Breadcrumbs>
@@ -78,7 +79,7 @@ export default function ProductDetail() {
           >
             {added ? "Added ✓" : "Add to cart"}
           </Button>
-          <BuyButton variant="contained" size="large" disabled={out} startIcon={<BoltIcon />} onClick={() => { add(product, qty); nav("/cart"); }}>
+          <BuyButton variant="contained" size="large" disabled={out} startIcon={<BoltIcon />} onClick={() => { add(product, qty); router.push("/cart"); }}>
             Buy now
           </BuyButton>
         </Box>

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import NextLink from "next/link";
+import { useRouter } from "next/navigation";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -22,18 +23,18 @@ export default function CartPage() {
   const { lines, setQty, remove, clear, total, count } = useCart();
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  const nav = useNavigate();
+  const router = useRouter();
 
   const listTotal = lines.reduce((s, l) => s + l.product.price * l.quantity, 0);
   const savings = listTotal - total;
 
   async function checkout() {
-    if (!localStorage.getItem("token")) return nav("/login", { state: { from: "/cart" } });
+    if (!localStorage.getItem("token")) return router.push("/login?from=%2Fcart");
     setBusy(true);
     try {
       await api.post("/orders", { items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })) });
       clear();
-      nav("/orders");
+      router.push("/orders");
     } catch (e) {
       setMsg(errMsg(e, "Checkout failed"));
     } finally {
@@ -47,7 +48,7 @@ export default function CartPage() {
         <EmptyCartIcon sx={{ fontSize: 64, color: "text.disabled" }} />
         <Typography variant="h5" component="h1" sx={{ mt: 1 }}>Your cart is empty</Typography>
         <Typography color="text.secondary" sx={{ mb: 2 }}>Add items to it now.</Typography>
-        <Button component={RouterLink} to="/" variant="contained">Shop now</Button>
+        <Button component={NextLink} href="/" variant="contained">Shop now</Button>
       </Paper>
     );
   }
@@ -62,7 +63,7 @@ export default function CartPage() {
             <ListItem key={l.product.id} divider sx={{ gap: 2, alignItems: "center" }}>
               <ProductImage name={l.product.name} src={l.product.imageUrl} size="sm" />
               <Box sx={{ flexGrow: 1 }}>
-                <Link component={RouterLink} to={`/product/${l.product.id}`} underline="hover" sx={{ fontWeight: 600 }}>{l.product.name}</Link>
+                <Link component={NextLink} href={`/product/${l.product.id}`} underline="hover" sx={{ fontWeight: 600 }}>{l.product.name}</Link>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Sold by {l.product.sellerName}</Typography>
                 <PriceTag product={l.product} />
               </Box>

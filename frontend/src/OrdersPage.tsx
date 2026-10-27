@@ -1,4 +1,4 @@
-import { Link as RouterLink } from "react-router-dom";
+import NextLink from "next/link";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -6,6 +6,7 @@ import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import type { Order } from "./api";
+import { useAuth } from "./AuthContext";
 import Loading from "./components/Loading";
 import ProductImage from "./components/ProductImage";
 import StatusChip from "./components/StatusChip";
@@ -13,12 +14,14 @@ import { money } from "./format";
 import { useFetch } from "./useFetch";
 
 export default function OrdersPage() {
-  const loggedIn = !!localStorage.getItem("token");
+  const { user, loading: authLoading } = useAuth();
+  const loggedIn = !!user;
   const { data, loading, error } = useFetch<Order[]>(loggedIn ? "/orders" : null);
   const orders = data ?? [];
 
+  if (authLoading) return <Loading />;
   if (!loggedIn) {
-    return <Alert severity="info">Please <Link component={RouterLink} to="/login" state={{ from: "/orders" }}>login</Link> to see your orders.</Alert>;
+    return <Alert severity="info">Please <Link component={NextLink} href="/login?from=%2Forders">login</Link> to see your orders.</Alert>;
   }
   if (loading) return <Loading />;
   if (error) return <Alert severity="error">Could not load your orders.</Alert>;
@@ -27,7 +30,7 @@ export default function OrdersPage() {
     <>
       <Typography variant="h5" component="h1" sx={{ fontWeight: 700, mb: 2 }}>My orders</Typography>
       {orders.length === 0 && (
-        <Alert severity="info">You have no orders yet. <Link component={RouterLink} to="/">Start shopping</Link></Alert>
+        <Alert severity="info">You have no orders yet. <Link component={NextLink} href="/">Start shopping</Link></Alert>
       )}
       {orders.map((o) => (
         <Paper key={o.id} variant="outlined" sx={{ mb: 2 }}>

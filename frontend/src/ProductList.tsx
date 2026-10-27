@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -33,7 +33,8 @@ const SORTS = [
 ];
 
 export default function ProductList() {
-  const [params, setParams] = useSearchParams();
+  const params = useSearchParams();
+  const router = useRouter();
   const q = params.get("q") ?? "";
   const category = params.get("category");
 
@@ -66,9 +67,10 @@ export default function ProductList() {
   }, [products, limit, inStockOnly, dealsOnly, sort]);
 
   function pickCategory(id: number | null) {
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(params.toString());
     if (id === null) next.delete("category"); else next.set("category", String(id));
-    setParams(next);
+    const query = next.toString();
+    router.push(query ? `/?${query}` : "/");
   }
 
   const activeCategory = categories.find((c) => String(c.id) === category);

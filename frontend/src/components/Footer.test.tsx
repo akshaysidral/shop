@@ -19,6 +19,6 @@ describe("Footer", () => {
 
   it("has a Sell on Bazario link that opens seller registration", () => {
     renderApp(<Footer />);
-    expect(screen.getByRole("link", { name: "Sell on Bazario" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Sell on Bazario" })).toHaveAttribute("href", "/login?mode=register&accountType=SELLER");
   });
 });

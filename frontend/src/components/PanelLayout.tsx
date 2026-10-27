@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { Link as RouterLink, Outlet, useLocation } from "react-router-dom";
+import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import Box from "@mui/material/Box";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -12,9 +13,9 @@ import { useAuth } from "../AuthContext";
 export type PanelLink = { to: string; label: string; icon: ReactNode; end?: boolean; permission?: string };
 
 /** Sidebar + content area shared by the Seller Hub and the Admin panel. */
-export default function PanelLayout({ title, links }: { title: string; links: PanelLink[] }) {
+export default function PanelLayout({ title, links, children }: { title: string; links: PanelLink[]; children: ReactNode }) {
   const { can } = useAuth();
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const selected = (l: PanelLink) => (l.end ? pathname === l.to : pathname === l.to || pathname.startsWith(l.to + "/"));
 
   return (
@@ -23,14 +24,14 @@ export default function PanelLayout({ title, links }: { title: string; links: Pa
         <Typography variant="subtitle1" sx={{ fontWeight: 700, px: 2, pt: 1.5 }}>{title}</Typography>
         <List dense component="nav" aria-label={title}>
           {links.filter((l) => !l.permission || can(l.permission)).map((l) => (
-            <ListItemButton key={l.to} component={RouterLink} to={l.to} selected={selected(l)}>
+            <ListItemButton key={l.to} component={NextLink} href={l.to} selected={selected(l)}>
               <ListItemIcon sx={{ minWidth: 36 }}>{l.icon}</ListItemIcon>
               <ListItemText primary={l.label} />
             </ListItemButton>
           ))}
         </List>
       </Paper>
-      <Box sx={{ minWidth: 0 }}><Outlet /></Box>
+      <Box sx={{ minWidth: 0 }}>{children}</Box>
     </Box>
   );
 }

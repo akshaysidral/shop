@@ -1,5 +1,6 @@
 import { FormEvent, MouseEvent, useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import NextLink from "next/link";
+import { useRouter } from "next/navigation";
 import AppBar from "@mui/material/AppBar";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
@@ -29,7 +30,7 @@ export default function Header() {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const { user, logout, can } = useAuth();
   const { count } = useCart();
-  const nav = useNavigate();
+  const router = useRouter();
   const categories = useFetch<Category[]>("/categories");
 
   function search(e: FormEvent) {
@@ -38,16 +39,16 @@ export default function Header() {
     if (q.trim()) next.set("q", q.trim());
     if (cat) next.set("category", cat);
     const qs = next.toString();
-    nav(qs ? `/?${qs}` : "/");
+    router.push(qs ? `/?${qs}` : "/");
   }
 
-  const go = (path: string) => { setAnchor(null); nav(path); };
+  const go = (path: string) => { setAnchor(null); router.push(path); };
 
   return (
     <AppBar position="sticky" elevation={2} sx={{ background: brand.gradient }}>
       <Container>
         <Toolbar disableGutters sx={{ gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, py: { xs: 1, md: 0 } }}>
-          <Box component={RouterLink} to="/" aria-label="Bazario home" sx={{ textDecoration: "none" }}>
+          <Box component={NextLink} href="/" aria-label="Bazario home" sx={{ textDecoration: "none" }}>
             <Logo light />
           </Box>
 
@@ -75,7 +76,7 @@ export default function Header() {
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: "auto" }}>
             {!user && (
-              <Button component={RouterLink} to="/login" state={{ mode: "register", accountType: "SELLER" }} color="inherit" startIcon={<StoreIcon />}>
+              <Button component={NextLink} href="/login?mode=register&accountType=SELLER" color="inherit" startIcon={<StoreIcon />}>
                 Sell on Bazario
               </Button>
             )}
@@ -94,13 +95,13 @@ export default function Header() {
                   {can("PRODUCTS_CREATE") && <MenuItem onClick={() => go("/seller")}><ListItemIcon><StoreIcon fontSize="small" /></ListItemIcon>Seller Hub</MenuItem>}
                   {can("STATS_READ") && <MenuItem onClick={() => go("/admin")}><ListItemIcon><DashboardIcon fontSize="small" /></ListItemIcon>Admin panel</MenuItem>}
                   <Divider />
-                  <MenuItem onClick={() => { setAnchor(null); logout(); nav("/"); }}><ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>Logout</MenuItem>
+                  <MenuItem onClick={() => { setAnchor(null); logout(); router.push("/"); }}><ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>Logout</MenuItem>
                 </Menu>
               </>
             ) : (
-              <Button component={RouterLink} to="/login" variant="contained" color="inherit" sx={{ color: "primary.main", bgcolor: "#fff" }}>Login</Button>
+              <Button component={NextLink} href="/login" variant="contained" color="inherit" sx={{ color: "primary.main", bgcolor: "#fff" }}>Login</Button>
             )}
-            <IconButton component={RouterLink} to="/cart" color="inherit" aria-label="Cart">
+            <IconButton component={NextLink} href="/cart" color="inherit" aria-label="Cart">
               <Badge badgeContent={count} color="secondary"><CartIcon /></Badge>
             </IconButton>
           </Box>

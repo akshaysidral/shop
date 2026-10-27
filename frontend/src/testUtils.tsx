@@ -1,6 +1,5 @@
-import { ReactElement } from "react";
+import { ReactElement, useSyncExternalStore } from "react";
 import { render } from "@testing-library/react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { AuthContext } from "./AuthContext";
 import type { AuthValue } from "./AuthContext";
 import { AxiosError } from "axios";
@@ -58,33 +57,51 @@ export function routeGet(routes: Record<string, unknown>) {
 
 /** Shows the current URL so tests can assert navigation. */
 export function LocationProbe() {
-  const l = useLocation();
-  return <div data-testid="location">{l.pathname + l.search}</div>;
+  const location = useSyncExternalStore(
+    (notify) => {
+      window.addEventListener("test:navigation", notify);
+      return () => window.removeEventListener("test:navigation", notify);
+    },
+    () => window.localStorage.getItem("__test_navigation") ?? window.location.pathname + window.location.search,
+    () => "/",
+  );
+  return <div data-testid="location">{location}</div>;
 }
 
 type Options = {
-  route?: string | { pathname: string; state?: unknown };   // initial URL (and optional router state)
-  path?: string;                     // route pattern when the page needs params, e.g. "/product/:id"
+  route?: string | { pathname: string; state?: unknown };   // initial URL (and optional navigation state)
   permissions?: string[] | null;     // null = logged out (default)
   user?: Partial<Me>;
   auth?: Partial<AuthValue>;
 };
 
-/** Renders a component inside router, cart and a fake logged-in user. */
-export function renderApp(ui: ReactElement, { route = "/", path, permissions = null, user, auth }: Options = {}) {
+/** Renders a component inside Next navigation mocks, cart and a fake logged-in user. */
+export function renderApp(ui: ReactElement, { route = "/", permissions = null, user, auth }: Options = {}) {
+  const initialRoute = typeof route === "string" ? route : routeWithState(route.pathname, route.state);
+  window.history.replaceState({}, "", initialRoute);
+  window.localStorage.setItem("__test_navigation", initialRoute);
   const value = makeAuth(permissions, user, auth);
-  const content = path ? <Routes><Route path={path} element={ui} /></Routes> : ui;
   const utils = render(
     <AuthContext.Provider value={value}>
       <CartProvider>
-        <MemoryRouter initialEntries={[route]}>
-          {content}
+        <>
+          {ui}
           <LocationProbe />
-        </MemoryRouter>
+        </>
       </CartProvider>
     </AuthContext.Provider>,
   );
   return { ...utils, auth: value };
+}
+
+function routeWithState(pathname: string, state: unknown): string {
+  if (!state || typeof state !== "object") return pathname;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(state)) {
+    if (typeof value === "string") params.set(key, value);
+  }
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 /** An error shaped like a failed API call: errMsg() will show `message`. */

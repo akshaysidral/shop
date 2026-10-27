@@ -1,5 +1,4 @@
 import { screen } from "@testing-library/react";
-import { Route, Routes } from "react-router-dom";
 import { renderApp } from "../testUtils";
 import PanelLayout from "./PanelLayout";
 import type { PanelLink } from "./PanelLayout";
@@ -12,12 +11,9 @@ const LINKS: PanelLink[] = [
 
 function panel(route: string, permissions: string[]) {
   return renderApp(
-    <Routes>
-      <Route path="/panel" element={<PanelLayout title="My panel" links={LINKS} />}>
-        <Route index element={<div>Dashboard page</div>} />
-        <Route path="items" element={<div>Items page</div>} />
-      </Route>
-    </Routes>,
+    <PanelLayout title="My panel" links={LINKS}>
+      {route === "/panel/items" ? <div>Items page</div> : <div>Dashboard page</div>}
+    </PanelLayout>,
     { route, permissions },
   );
 }

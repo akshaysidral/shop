@@ -7,6 +7,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/setupTests.ts",
+    exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**"],
     // Material UI ships ESM + CJS; inlining lets Vitest resolve it the same way Vite does.
     server: { deps: { inline: [/@mui\//] } },
   },

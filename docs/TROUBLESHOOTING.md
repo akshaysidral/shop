@@ -24,7 +24,7 @@
 |---|---|
 | `npm: ... uv_cwd` / `no such file or directory` | The terminal's folder was deleted/replaced. `cd /path/to/shop/frontend` again. |
 | `eslint: command not found` | Broken install: `rm -rf node_modules package-lock.json && npm install`. |
-| "Could not load products. Is the backend running?" | Start the backend; open exactly `http://localhost:5173` (CORS allows that origin). |
+| "Could not load products. Is the backend running?" | Start/restart the backend, then open `http://localhost:3000` (or `http://localhost:3001` if Next.js selected another port). The backend allows both default Next.js dev origins. |
 | CORS error with another port | Set `APP_CORS_ORIGIN=http://localhost:<port>` and restart the backend. |
 | A Vitest test fails with an error that is not an assertion | Check for a `beforeEach(() => mock.mockReset())` that returns the mock. Use braces so nothing is returned. |
 | `npm audit` reports vulnerabilities | Check `npm audit --omit=dev` for what reaches production; avoid `npm audit fix --force`. |

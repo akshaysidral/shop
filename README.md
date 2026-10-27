@@ -60,7 +60,7 @@ You need **JDK 21**, **Maven**, **Node 20+** and a **PostgreSQL** server.
 
 1. **Database** (once): `CREATE USER shop WITH PASSWORD 'shop'; CREATE DATABASE shop OWNER shop;`
 2. **Backend:** `cd backend && mvn spring-boot:run` (http://localhost:8080)
-3. **Frontend:** `cd frontend && npm install && npm run dev` (http://localhost:5173)
+3. **Frontend:** `cd frontend && npm install && npm run dev` (http://localhost:3000)
 
 Docker alternative: `docker compose up --build` (UI http://localhost, API http://localhost:8080).
 

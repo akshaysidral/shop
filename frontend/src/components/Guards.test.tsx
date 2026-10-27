@@ -1,22 +1,18 @@
 import { screen } from "@testing-library/react";
-import { Route, Routes } from "react-router-dom";
+import { waitFor } from "@testing-library/react";
 import { renderApp } from "../testUtils";
 import { RequirePermission } from "./Guards";
 
 function guarded(permission: string | string[], options: Parameters<typeof renderApp>[1]) {
-  return renderApp(
-    <Routes>
-      <Route path="/seller" element={<RequirePermission permission={permission}><div>Seller area</div></RequirePermission>} />
-      <Route path="/login" element={<div>Login page</div>} />
-    </Routes>,
-    { route: "/seller", ...options },
-  );
+  return renderApp(<RequirePermission permission={permission}><div>Seller area</div></RequirePermission>,
+    { route: "/seller", ...options });
 }
 
 describe("RequirePermission", () => {
-  it("sends anonymous visitors to the login page", () => {
+  it("sends anonymous visitors to the login page", async () => {
     guarded("PRODUCTS_CREATE", { permissions: null });
-    expect(screen.getByText("Login page")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/login?from=%2Fseller"));
+    expect(screen.queryByText("Seller area")).not.toBeInTheDocument();
   });
 
   it("blocks users without the permission", () => {

@@ -27,7 +27,7 @@ app:
     password: ${APP_SELLER2_PASSWORD:Seller2@12345}
     store-name: ${APP_SELLER2_STORE:Preferred Picks}
     commission-percent: 3 # preferred seller
-  cors-origin: ${APP_CORS_ORIGIN:http://localhost:5173}
+  cors-origin: ${APP_CORS_ORIGIN:http://localhost:3000,http://localhost:3001}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
     expiration-ms: 86400000

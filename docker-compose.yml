@@ -6,7 +6,8 @@ services:
       POSTGRES_DB: shop
       POSTGRES_USER: shop
       POSTGRES_PASSWORD: shop
-    volumes: [pgdata:/var/lib/postgresql/data]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U shop"]
       interval: 5s
@@ -24,7 +25,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      args: { VITE_API_URL: http://localhost:8080/api }
-    ports: ["80:80"]
+      args: { NEXT_PUBLIC_API_URL: "http://localhost:8080/api" }
+    ports: ["80:3000"]
 volumes:
   pgdata: {}
