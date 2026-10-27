@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class CategoryService {
   private final CategoryRepository categories;
   private final ProductRepository products;

@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
   List<Order> findByUserEmailOrderByCreatedAtDesc(String email);
+
   List<Order> findAllByOrderByCreatedAtDesc();
+
   boolean existsByUserId(Long userId);
 }

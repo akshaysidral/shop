@@ -25,8 +25,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Creates roles, categories, the first admin, two demo sellers (5% and 3% commission), sample products and a sale. */
-@Component @RequiredArgsConstructor
+/**
+ * Creates roles, categories, the first admin, two demo sellers (5% and 3%
+ * commission), sample products and a sale.
+ */
+@Component
+@RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
   private final ProductRepository products;
   private final RoleRepository roles;
@@ -35,25 +39,36 @@ public class DataSeeder implements CommandLineRunner {
   private final OfferRepository offers;
   private final PasswordEncoder encoder;
 
-  @Value("${app.bootstrap-admin.email:}") private String adminEmail;
-  @Value("${app.bootstrap-admin.password:}") private String adminPassword;
+  @Value("${app.bootstrap-admin.email:}")
+  private String adminEmail;
+  @Value("${app.bootstrap-admin.password:}")
+  private String adminPassword;
 
-  @Value("${app.bootstrap-seller.email:}") private String sellerEmail;
-  @Value("${app.bootstrap-seller.password:}") private String sellerPassword;
-  @Value("${app.bootstrap-seller.store-name:Bazario Mart}") private String sellerStore;
-  @Value("${app.bootstrap-seller.commission-percent:5}") private BigDecimal sellerCommission;
+  @Value("${app.bootstrap-seller.email:}")
+  private String sellerEmail;
+  @Value("${app.bootstrap-seller.password:}")
+  private String sellerPassword;
+  @Value("${app.bootstrap-seller.store-name:Bazario Mart}")
+  private String sellerStore;
+  @Value("${app.bootstrap-seller.commission-percent:5}")
+  private BigDecimal sellerCommission;
 
-  @Value("${app.bootstrap-seller-2.email:}") private String seller2Email;
-  @Value("${app.bootstrap-seller-2.password:}") private String seller2Password;
-  @Value("${app.bootstrap-seller-2.store-name:Preferred Picks}") private String seller2Store;
-  @Value("${app.bootstrap-seller-2.commission-percent:3}") private BigDecimal seller2Commission;
+  @Value("${app.bootstrap-seller-2.email:}")
+  private String seller2Email;
+  @Value("${app.bootstrap-seller-2.password:}")
+  private String seller2Password;
+  @Value("${app.bootstrap-seller-2.store-name:Preferred Picks}")
+  private String seller2Store;
+  @Value("${app.bootstrap-seller-2.commission-percent:3}")
+  private BigDecimal seller2Commission;
 
-  @Override @Transactional
+  @Override
+  @Transactional
   public void run(String... args) {
     Set<Permission> every = EnumSet.allOf(Permission.class);
 
     Role admin = roles.findByName("ADMIN").orElseGet(() -> newRole("ADMIN", "Full access", every));
-    if (!admin.getPermissions().containsAll(every)) {      // pick up permissions added in new releases
+    if (!admin.getPermissions().containsAll(every)) { // pick up permissions added in new releases
       admin.getPermissions().addAll(every);
       roles.save(admin);
     }
@@ -88,12 +103,17 @@ public class DataSeeder implements CommandLineRunner {
     return roles.save(r);
   }
 
-  /** Creates the first admin (or promotes an existing user with that email). Blank email = do nothing. */
+  /**
+   * Creates the first admin (or promotes an existing user with that email). Blank
+   * email = do nothing.
+   */
   private void bootstrapAdmin(Role admin) {
-    if (adminEmail == null || adminEmail.isBlank()) return;
+    if (adminEmail == null || adminEmail.isBlank())
+      return;
     User u = users.findByEmail(adminEmail).orElse(null);
     if (u == null) {
-      if (adminPassword == null || adminPassword.isBlank()) return;
+      if (adminPassword == null || adminPassword.isBlank())
+        return;
       u = new User();
       u.setEmail(adminEmail);
       u.setPasswordHash(encoder.encode(adminPassword));
@@ -103,16 +123,20 @@ public class DataSeeder implements CommandLineRunner {
   }
 
   private User bootstrapSeller(Role sellerRole, String email, String password, String store, BigDecimal commission) {
-    if (email == null || email.isBlank()) return null;
+    if (email == null || email.isBlank())
+      return null;
     User u = users.findByEmail(email).orElse(null);
     if (u == null) {
-      if (password == null || password.isBlank()) return null;
+      if (password == null || password.isBlank())
+        return null;
       u = new User();
       u.setEmail(email);
       u.setPasswordHash(encoder.encode(password));
     }
-    if (u.getStoreName() == null || u.getStoreName().isBlank()) u.setStoreName(store);
-    if (u.getCommissionPercent() == null) u.setCommissionPercent(commission);
+    if (u.getStoreName() == null || u.getStoreName().isBlank())
+      u.setStoreName(store);
+    if (u.getCommissionPercent() == null)
+      u.setCommissionPercent(commission);
     u.getRoles().add(sellerRole);
     return users.save(u);
   }
@@ -137,7 +161,8 @@ public class DataSeeder implements CommandLineRunner {
   }
 
   private void seedProducts(User mart, User picks, Map<String, Category> cats) {
-    if (products.count() > 0) return;
+    if (products.count() > 0)
+      return;
     add(mart, cats.get("Electronics"), "Wireless Mouse", "2.4GHz ergonomic mouse", "799", 50);
     add(mart, cats.get("Electronics"), "Mechanical Keyboard", "Blue switches, full size", "3499", 25);
     add(mart, cats.get("Electronics"), "USB-C Hub", "7-in-1 hub with HDMI", "1999", 40);
@@ -166,19 +191,31 @@ public class DataSeeder implements CommandLineRunner {
     products.save(p);
   }
 
-  /** Products created before sellers/categories existed get the first demo seller and the Electronics category. */
+  /**
+   * Products created before sellers/categories existed get the first demo seller
+   * and the Electronics category.
+   */
   private void adoptLegacyProducts(User seller, Category fallback) {
-    if (seller == null) return;
+    if (seller == null)
+      return;
     for (Product p : products.findAll()) {
       boolean changed = false;
-      if (p.getSeller() == null) { p.setSeller(seller); changed = true; }
-      if (p.getCategory() == null && fallback != null) { p.setCategory(fallback); changed = true; }
-      if (changed) products.save(p);
+      if (p.getSeller() == null) {
+        p.setSeller(seller);
+        changed = true;
+      }
+      if (p.getCategory() == null && fallback != null) {
+        p.setCategory(fallback);
+        changed = true;
+      }
+      if (changed)
+        products.save(p);
     }
   }
 
   private void seedOffer(User seller) {
-    if (seller == null || offers.count() > 0) return;
+    if (seller == null || offers.count() > 0)
+      return;
     Offer o = new Offer();
     o.setSeller(seller);
     o.setName("Festive Bonanza");

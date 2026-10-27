@@ -8,11 +8,16 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity @Table(name = "orders") @Getter @Setter
+@Entity
+@Table(name = "orders")
+@Getter
+@Setter
 public class Order {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @ManyToOne(optional = false, fetch = FetchType.LAZY) private User user;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  private User user;
   private Instant createdAt;
   private BigDecimal total;
 
@@ -24,12 +29,19 @@ public class Order {
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderItem> items = new ArrayList<>();
 
-  /** All lines cancelled -> CANCELLED; all remaining delivered -> DELIVERED; any shipped -> SHIPPED; else PLACED. */
+  /**
+   * All lines cancelled -> CANCELLED; all remaining delivered -> DELIVERED; any
+   * shipped -> SHIPPED; else PLACED.
+   */
   public void recomputeStatus() {
     List<OrderItem> live = items.stream().filter(i -> i.effectiveStatus() != OrderStatus.CANCELLED).toList();
-    if (live.isEmpty()) status = OrderStatus.CANCELLED;
-    else if (live.stream().allMatch(i -> i.effectiveStatus() == OrderStatus.DELIVERED)) status = OrderStatus.DELIVERED;
-    else if (live.stream().anyMatch(i -> i.effectiveStatus() != OrderStatus.PLACED)) status = OrderStatus.SHIPPED;
-    else status = OrderStatus.PLACED;
+    if (live.isEmpty())
+      status = OrderStatus.CANCELLED;
+    else if (live.stream().allMatch(i -> i.effectiveStatus() == OrderStatus.DELIVERED))
+      status = OrderStatus.DELIVERED;
+    else if (live.stream().anyMatch(i -> i.effectiveStatus() != OrderStatus.PLACED))
+      status = OrderStatus.SHIPPED;
+    else
+      status = OrderStatus.PLACED;
   }
 }

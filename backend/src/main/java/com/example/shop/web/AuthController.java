@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-@RestController @RequestMapping("/api/auth") @RequiredArgsConstructor
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
   private final UserRepository users;
   private final RoleRepository roles;
@@ -26,8 +28,13 @@ public class AuthController {
   private final JwtService jwt;
   private final CommissionService commissions;
 
-  /** Self-registration as a BUYER (default) or SELLER. ADMIN can never be chosen here. */
-  @PostMapping("/register") @ResponseStatus(HttpStatus.CREATED) @Transactional
+  /**
+   * Self-registration as a BUYER (default) or SELLER. ADMIN can never be chosen
+   * here.
+   */
+  @PostMapping("/register")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Transactional
   public AuthResponse register(@Valid @RequestBody RegisterRequest req) {
     if (users.existsByEmail(req.email()))
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
@@ -45,7 +52,7 @@ public class AuthController {
     u.setPasswordHash(encoder.encode(req.password()));
     if (seller) {
       u.setStoreName(req.storeName().trim());
-      u.setCommissionPercent(commissions.defaultPercent());   // admins can later move a seller to a lower rate
+      u.setCommissionPercent(commissions.defaultPercent()); // admins can later move a seller to a lower rate
     }
     u.getRoles().add(role);
     users.save(u);

@@ -13,14 +13,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class StatsService {
   private final UserRepository users;
   private final ProductRepository products;
   private final OrderRepository orders;
   private final OrderItemRepository orderItems;
 
-  /** Demo-scale: sums are computed in memory. Cancelled lines are excluded from sales and commission. */
+  /**
+   * Demo-scale: sums are computed in memory. Cancelled lines are excluded from
+   * sales and commission.
+   */
   @Transactional(readOnly = true)
   public StatsResponse get() {
     List<OrderItem> live = orderItems.findAll().stream()

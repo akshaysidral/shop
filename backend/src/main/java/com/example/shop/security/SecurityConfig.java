@@ -21,7 +21,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@EnableMethodSecurity   // enables @PreAuthorize("hasAuthority('...')") on controller methods
+@EnableMethodSecurity // enables @PreAuthorize("hasAuthority('...')") on controller methods
 @RequiredArgsConstructor
 public class SecurityConfig {
   private final JwtFilter jwtFilter;
@@ -37,9 +37,10 @@ public class SecurityConfig {
         .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
         .authorizeHttpRequests(a -> a
             .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/offers/active",
-                "/actuator/health").permitAll()
+                "/actuator/health")
+            .permitAll()
             .requestMatchers("/api/auth/**", "/error").permitAll()
-            .anyRequest().authenticated())   // fine-grained checks live in @PreAuthorize
+            .anyRequest().authenticated()) // fine-grained checks live in @PreAuthorize
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
   }

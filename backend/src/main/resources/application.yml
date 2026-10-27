@@ -1,10 +1,10 @@
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/shop}
-    username: ${DB_USER:shop}
-    password: ${DB_PASSWORD:shop}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:admin}
   jpa:
-    hibernate.ddl-auto: update   # switch to Flyway migrations for production
+    hibernate.ddl-auto: update # switch to Flyway migrations for production
     open-in-view: false
 app:
   # First admin. DEV DEFAULTS ONLY: override APP_ADMIN_EMAIL / APP_ADMIN_PASSWORD in any real environment.
@@ -20,13 +20,13 @@ app:
     email: ${APP_SELLER_EMAIL:seller@bazario.local}
     password: ${APP_SELLER_PASSWORD:Seller@12345}
     store-name: ${APP_SELLER_STORE:Bazario Mart}
-    commission-percent: 5          # standard seller
+    commission-percent: 5 # standard seller
   # Second demo seller on the lower, preferred rate.
   bootstrap-seller-2:
     email: ${APP_SELLER2_EMAIL:seller2@bazario.local}
     password: ${APP_SELLER2_PASSWORD:Seller2@12345}
     store-name: ${APP_SELLER2_STORE:Preferred Picks}
-    commission-percent: 3          # preferred seller
+    commission-percent: 3 # preferred seller
   cors-origin: ${APP_CORS_ORIGIN:http://localhost:5173}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}

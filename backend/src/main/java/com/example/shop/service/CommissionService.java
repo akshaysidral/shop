@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Each seller pays the marketplace a percentage of their sales (for example 5% standard, 3% preferred). */
+/**
+ * Each seller pays the marketplace a percentage of their sales (for example 5%
+ * standard, 3% preferred).
+ */
 @Service
 public class CommissionService {
   public static final BigDecimal MAX_PERCENT = new BigDecimal("30");
@@ -29,18 +32,24 @@ public class CommissionService {
   private final BigDecimal defaultPercent;
 
   public CommissionService(UserRepository users, OrderItemRepository items, CurrentUser current,
-                           @Value("${app.commission.default-percent:5}") BigDecimal defaultPercent) {
+      @Value("${app.commission.default-percent:5}") BigDecimal defaultPercent) {
     this.users = users;
     this.items = items;
     this.current = current;
     this.defaultPercent = defaultPercent;
   }
 
-  public BigDecimal defaultPercent() { return defaultPercent; }
+  public BigDecimal defaultPercent() {
+    return defaultPercent;
+  }
 
-  /** The seller's own rate, or the marketplace default. Products without a seller carry no commission. */
+  /**
+   * The seller's own rate, or the marketplace default. Products without a seller
+   * carry no commission.
+   */
   public BigDecimal rateFor(User seller) {
-    if (seller == null) return BigDecimal.ZERO;
+    if (seller == null)
+      return BigDecimal.ZERO;
     return seller.getCommissionPercent() != null ? seller.getCommissionPercent() : defaultPercent;
   }
 
@@ -55,7 +64,10 @@ public class CommissionService {
     return users.findAll(Sort.by("email")).stream().filter(CommissionService::isSeller).map(this::summary).toList();
   }
 
-  /** Applies to FUTURE orders only: existing order lines keep the rate they were sold at. */
+  /**
+   * Applies to FUTURE orders only: existing order lines keep the rate they were
+   * sold at.
+   */
   @Transactional
   public SellerSummaryResponse setRate(Long userId, BigDecimal percent) {
     if (percent == null || percent.signum() < 0 || percent.compareTo(MAX_PERCENT) > 0)
@@ -68,7 +80,10 @@ public class CommissionService {
     return summary(users.save(u));
   }
 
-  /** Cancelled lines are ignored. Delivered lines are payable now; the rest are still pending. */
+  /**
+   * Cancelled lines are ignored. Delivered lines are payable now; the rest are
+   * still pending.
+   */
   public static SellerEarningsResponse earnings(BigDecimal percent, List<OrderItem> lines) {
     BigDecimal gross = BigDecimal.ZERO;
     BigDecimal commission = BigDecimal.ZERO;
@@ -77,12 +92,15 @@ public class CommissionService {
     long units = 0;
     for (OrderItem i : lines) {
       OrderStatus status = i.effectiveStatus();
-      if (status == OrderStatus.CANCELLED) continue;
+      if (status == OrderStatus.CANCELLED)
+        continue;
       gross = gross.add(i.lineTotal());
       commission = commission.add(i.commissionOrZero());
       units += i.getQuantity();
-      if (status == OrderStatus.DELIVERED) payable = payable.add(i.earningOrTotal());
-      else pending = pending.add(i.earningOrTotal());
+      if (status == OrderStatus.DELIVERED)
+        payable = payable.add(i.earningOrTotal());
+      else
+        pending = pending.add(i.earningOrTotal());
     }
     return new SellerEarningsResponse(percent, gross, commission, payable.add(pending), payable, pending, units);
   }

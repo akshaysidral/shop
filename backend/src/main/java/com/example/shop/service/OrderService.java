@@ -27,7 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class OrderService {
   private final ProductRepository products;
   private final OrderRepository orders;
@@ -58,7 +59,7 @@ public class OrderService {
       if (p.getStock() < line.quantity())
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient stock for " + p.getName());
 
-      PricingService.Price price = pricing.priceOf(p, live);   // offer-adjusted price at this moment
+      PricingService.Price price = pricing.priceOf(p, live); // offer-adjusted price at this moment
       p.setStock(p.getStock() - line.quantity());
 
       OrderItem oi = new OrderItem();
@@ -71,7 +72,7 @@ public class OrderService {
       oi.setSellerName(seller == null ? "Marketplace" : seller.displayName());
 
       BigDecimal lineTotal = price.finalPrice().multiply(BigDecimal.valueOf(line.quantity()));
-      BigDecimal percent = commissions.rateFor(seller);          // snapshot: later rate changes do not rewrite history
+      BigDecimal percent = commissions.rateFor(seller); // snapshot: later rate changes do not rewrite history
       Commission.Split split = Commission.split(lineTotal, percent);
       oi.setCommissionPercent(percent);
       oi.setCommissionAmount(split.commission());
@@ -95,7 +96,10 @@ public class OrderService {
     return orderItems.findForSeller(current.require().getId()).stream().map(SellerOrderLine::from).toList();
   }
 
-  /** A seller (or an admin with ORDERS_UPDATE) moves one line along: PLACED, SHIPPED, DELIVERED or CANCELLED. */
+  /**
+   * A seller (or an admin with ORDERS_UPDATE) moves one line along: PLACED,
+   * SHIPPED, DELIVERED or CANCELLED.
+   */
   @Transactional
   public OrderResponse updateItemStatus(Long orderId, Long itemId, OrderStatus next) {
     Order order = find(orderId);
@@ -124,7 +128,8 @@ public class OrderService {
     if (order.getStatus() == OrderStatus.CANCELLED && next != OrderStatus.CANCELLED)
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Cancelled orders cannot be reopened");
     for (OrderItem item : order.getItems()) {
-      if (item.effectiveStatus() != OrderStatus.CANCELLED) applyItemStatus(item, next);
+      if (item.effectiveStatus() != OrderStatus.CANCELLED)
+        applyItemStatus(item, next);
     }
     order.recomputeStatus();
     return OrderResponse.from(orders.save(order));
@@ -134,7 +139,8 @@ public class OrderService {
   public void delete(Long id) {
     Order order = find(id);
     for (OrderItem item : order.getItems()) {
-      if (item.effectiveStatus() != OrderStatus.CANCELLED) restoreStock(item);
+      if (item.effectiveStatus() != OrderStatus.CANCELLED)
+        restoreStock(item);
     }
     orders.delete(order);
   }
@@ -144,8 +150,10 @@ public class OrderService {
     OrderStatus cur = item.effectiveStatus();
     if (cur == OrderStatus.CANCELLED && next != OrderStatus.CANCELLED)
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Cancelled lines cannot be reopened");
-    if (cur == next) return;
-    if (next == OrderStatus.CANCELLED) restoreStock(item);
+    if (cur == next)
+      return;
+    if (next == OrderStatus.CANCELLED)
+      restoreStock(item);
     item.setStatus(next);
   }
 

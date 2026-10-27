@@ -13,14 +13,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Works out what a buyer pays: the list price minus the best live offer of the product's seller. */
-@Service @RequiredArgsConstructor
+/**
+ * Works out what a buyer pays: the list price minus the best live offer of the
+ * product's seller.
+ */
+@Service
+@RequiredArgsConstructor
 public class PricingService {
   private final OfferRepository offers;
 
-  public record Price(BigDecimal finalPrice, int discountPercent, String offerName) {}
+  public record Price(BigDecimal finalPrice, int discountPercent, String offerName) {
+  }
 
-  /** Load all live offers once (grouped by seller id) and reuse the map for a whole list of products. */
+  /**
+   * Load all live offers once (grouped by seller id) and reuse the map for a
+   * whole list of products.
+   */
   @Transactional(readOnly = true)
   public Map<Long, List<Offer>> liveOffersBySeller() {
     return offers.findActive(Instant.now()).stream()

@@ -17,10 +17,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Validates the JWT, then loads the user's CURRENT permissions from the database.
- * Because permissions are not stored in the token, role changes take effect on the very next request.
+ * Validates the JWT, then loads the user's CURRENT permissions from the
+ * database.
+ * Because permissions are not stored in the token, role changes take effect on
+ * the very next request.
  */
-@Component @RequiredArgsConstructor
+@Component
+@RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
   private final JwtService jwt;
   private final UserRepository users;
@@ -40,7 +43,8 @@ public class JwtFilter extends OncePerRequestFilter {
           SecurityContextHolder.getContext().setAuthentication(
               new UsernamePasswordAuthenticationToken(email, null, authorities));
         });
-      } catch (JwtException | IllegalArgumentException ignored) { /* stays unauthenticated */ }
+      } catch (JwtException | IllegalArgumentException ignored) {
+        /* stays unauthenticated */ }
     }
     chain.doFilter(req, res);
   }

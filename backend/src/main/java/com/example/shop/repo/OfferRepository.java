@@ -12,6 +12,8 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
   List<Offer> findActive(@Param("now") Instant now);
 
   List<Offer> findBySellerIdOrderByStartsAtDesc(Long sellerId);
+
   List<Offer> findAllByOrderByStartsAtDesc();
+
   List<Offer> findByProducts_Id(Long productId);
 }

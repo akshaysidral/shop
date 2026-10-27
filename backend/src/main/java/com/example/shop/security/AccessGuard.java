@@ -12,7 +12,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Anti-escalation: nobody can grant or revoke a permission they do not hold themselves. */
+/**
+ * Anti-escalation: nobody can grant or revoke a permission they do not hold
+ * themselves.
+ */
 @Component
 public class AccessGuard {
 

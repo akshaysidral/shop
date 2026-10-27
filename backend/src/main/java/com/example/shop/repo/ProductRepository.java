@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
   boolean existsByCategory_Id(Long categoryId);
+
   long countByCategory_Id(Long categoryId);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)

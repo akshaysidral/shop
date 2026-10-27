@@ -17,7 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class RoleService {
   public static final String ADMIN = "ADMIN";
 
@@ -37,7 +38,7 @@ public class RoleService {
 
   @Transactional
   public RoleResponse create(RoleRequest req) {
-    guard.requireHolds(req.permissions());               // cannot hand out what you do not have
+    guard.requireHolds(req.permissions()); // cannot hand out what you do not have
     if (roles.existsByName(req.name()))
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Role name already exists");
     Role role = new Role();

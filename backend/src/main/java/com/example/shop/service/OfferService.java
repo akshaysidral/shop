@@ -20,8 +20,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Festival sales and offers. Sellers control their own; admins (OFFERS_MANAGE_ALL) can manage any. */
-@Service @RequiredArgsConstructor
+/**
+ * Festival sales and offers. Sellers control their own; admins
+ * (OFFERS_MANAGE_ALL) can manage any.
+ */
+@Service
+@RequiredArgsConstructor
 public class OfferService {
   private final OfferRepository offers;
   private final ProductRepository products;
@@ -94,7 +98,8 @@ public class OfferService {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more products do not exist");
     for (Product p : found) {
       if (p.getSeller() == null || !p.getSeller().getId().equals(seller.getId()))
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "An offer can only include the seller's own products");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            "An offer can only include the seller's own products");
     }
 
     o.setName(r.name().trim());
@@ -109,10 +114,14 @@ public class OfferService {
 
   private OfferResponse view(Offer o, Instant now) {
     String status;
-    if (!o.isActive()) status = "PAUSED";
-    else if (now.isBefore(o.getStartsAt())) status = "SCHEDULED";
-    else if (now.isAfter(o.getEndsAt())) status = "ENDED";
-    else status = "LIVE";
+    if (!o.isActive())
+      status = "PAUSED";
+    else if (now.isBefore(o.getStartsAt()))
+      status = "SCHEDULED";
+    else if (now.isAfter(o.getEndsAt()))
+      status = "ENDED";
+    else
+      status = "LIVE";
     return new OfferResponse(o.getId(), o.getName(), o.getDiscountPercent(), o.getStartsAt(), o.getEndsAt(),
         o.isActive(), o.isAppliesToAll(), o.getProducts().stream().map(Product::getId).sorted().toList(),
         o.getSeller().getId(), o.getSeller().displayName(), status);

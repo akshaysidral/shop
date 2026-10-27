@@ -22,7 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class ProductService {
   private final ProductRepository products;
   private final CategoryRepository categories;
@@ -80,7 +81,7 @@ public class ProductService {
   public void delete(Long id) {
     Product p = find(id);
     requireOwnerOrManageAll(p);
-    for (Offer o : offers.findByProducts_Id(id)) {          // detach from offers first (join table FK)
+    for (Offer o : offers.findByProducts_Id(id)) { // detach from offers first (join table FK)
       o.getProducts().removeIf(x -> x.getId().equals(id));
     }
     products.delete(p);

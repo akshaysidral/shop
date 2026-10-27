@@ -4,11 +4,17 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity @Table(name = "app_category") @Getter @Setter
+@Entity
+@Table(name = "app_category")
+@Getter
+@Setter
 public class Category {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @Column(unique = true, nullable = false, length = 60) private String name;
+  @Column(unique = true, nullable = false, length = 60)
+  private String name;
   /** Bootstrap Icons class, e.g. "bi-phone". */
-  @Column(length = 40) private String icon;
+  @Column(length = 40)
+  private String icon;
 }

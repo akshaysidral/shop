@@ -19,7 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class UserService {
   private final UserRepository users;
   private final RoleRepository roles;
@@ -50,7 +51,8 @@ public class UserService {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more role ids do not exist");
     Set<Role> target = new HashSet<>(found);
 
-    // roles being added or removed: caller must hold every permission those roles carry
+    // roles being added or removed: caller must hold every permission those roles
+    // carry
     Set<Role> changed = new HashSet<>(target);
     changed.addAll(user.getRoles());
     Set<Role> unchanged = new HashSet<>(target);
