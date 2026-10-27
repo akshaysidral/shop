@@ -97,9 +97,11 @@ class DtosTest {
 
   @Test void userResponseCombinesRolesAndPermissionsAndShowsTheRate() {
     Role seller = new Role();
+    seller.setId(1L);
     seller.setName("SELLER");
     seller.getPermissions().addAll(List.of(Permission.PRODUCTS_CREATE, Permission.OFFERS_MANAGE));
     Role extra = new Role();
+    extra.setId(2L);
     extra.setName("MODERATOR");
     extra.getPermissions().addAll(List.of(Permission.PRODUCTS_CREATE, Permission.PRODUCTS_MANAGE_ALL));
     User u = new User();

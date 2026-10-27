@@ -267,7 +267,7 @@ class OrderServiceTest {
     List<SellerOrderLine> lines = service.sellerLines();
 
     assertEquals(1, lines.size());
-    assertEquals("b***@t.com", lines.get(0).buyer());
+    assertEquals("***@t.com", lines.get(0).buyer());
     assertEquals(2, lines.get(0).quantity());
   }
 
