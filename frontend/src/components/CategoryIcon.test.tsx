@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import CategoryIcon, { CATEGORY_ICON_KEYS, iconKey } from "./CategoryIcon";
 
-const iconKey = (icon: string | null) => render(<CategoryIcon icon={icon} />).container.querySelector("[data-icon]")?.getAttribute("data-icon");
+const renderedIconKey = (icon: string | null) => render(<CategoryIcon icon={icon} />).container.querySelector("[data-icon]")?.getAttribute("data-icon");
 
 describe("CategoryIcon", () => {
   it("knows the icon keys the admin can choose from", () => {
@@ -9,8 +9,8 @@ describe("CategoryIcon", () => {
   });
 
   it("draws the icon for a key", () => {
-    expect(iconKey("books")).toBe("books");
-    expect(iconKey("phone")).toBe("phone");
+    expect(renderedIconKey("books")).toBe("books");
+    expect(renderedIconKey("phone")).toBe("phone");
   });
 
   it("understands the older Bootstrap icon names", () => {
@@ -20,8 +20,8 @@ describe("CategoryIcon", () => {
   });
 
   it("falls back to the tag icon", () => {
-    expect(iconKey(null)).toBe("tag");
-    expect(iconKey("not-an-icon")).toBe("tag");
+    expect(renderedIconKey(null)).toBe("tag");
+    expect(renderedIconKey("not-an-icon")).toBe("tag");
   });
 
   it("normalises icon names to keys", () => {

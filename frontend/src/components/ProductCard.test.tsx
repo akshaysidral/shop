@@ -49,10 +49,10 @@ describe("ProductCard", () => {
     expect(screen.getByRole("button", { name: /added/i })).toBeInTheDocument();
   });
 
-  it("stops adding once the stock is in the cart", async () => {
+  it("disables adding once the stock is in the cart", async () => {
     card(makeProduct({ stock: 1 }));
     await userEvent.click(screen.getByRole("button", { name: /add to cart/i }));
-    await userEvent.click(screen.getByRole("button", { name: /added|max in cart/i }));
+    expect(screen.getByRole("button", { name: /added|max in cart/i })).toBeDisabled();
     expect(screen.getByTestId("count")).toHaveTextContent("1");
   });
 
