@@ -9,11 +9,11 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { api, errMsg } from "./api";
-import { BuyButton } from "./components/Buttons";
-import { BagIcon } from "./icons";
-import { brand } from "./theme";
-import { useAuth } from "./AuthContext";
+import { api, errMsg } from "../../api";
+import { BuyButton } from "../../components/Buttons";
+import { BagIcon } from "../../icons";
+import { brand } from "../../theme";
+import { useAuth } from "../../AuthContext";
 
 type AccountType = "BUYER" | "SELLER";
 export default function LoginPage({ onAuth }: { onAuth?: () => void | Promise<void> } = {}) {

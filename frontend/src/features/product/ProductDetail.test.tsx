@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ProductDetail from "./ProductDetail";
-import { CartCount, makeProduct, renderApp, routeGet } from "./testUtils";
+import { CartCount, makeProduct, renderApp, routeGet } from "../../testUtils";
 
 const show = (product: ReturnType<typeof makeProduct> | Error) => {
   routeGet({ "/products/1": product });
@@ -20,7 +20,7 @@ describe("ProductDetail", () => {
 
   it("links back to the category in the breadcrumb", async () => {
     show(makeProduct({ categoryId: 4, categoryName: "Electronics" }));
-    expect(await screen.findByRole("link", { name: "Electronics" })).toHaveAttribute("href", "/?category=4");
+    expect(await screen.findByRole("link", { name: "Electronics" })).toHaveAttribute("href", "/category/electronics");
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
   });
 

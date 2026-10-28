@@ -1,8 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { api } from "./api";
+import { api } from "../../api";
 import CartPage from "./CartPage";
-import { apiError, makeProduct, renderApp, SeedCart } from "./testUtils";
+import { apiError, makeProduct, renderApp, SeedCart } from "../../testUtils";
 
 const mouse = makeProduct({ id: 1, name: "Mouse", price: 800, finalPrice: 800, stock: 3 });
 const lamp = makeProduct({ id: 2, name: "Lamp", price: 1000, finalPrice: 800, discountPercent: 20, stock: 5, sellerName: "Zed" });

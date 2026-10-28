@@ -4,12 +4,13 @@ This guide explains [`ci-cd.yml`](./ci-cd.yml), how it protects changes, and how
 
 ## What this pipeline does
 
-The workflow has four jobs:
+The workflow has five jobs:
 
-1. **Backend (build and test)** checks out the repository, sets up Java 21 with Maven caching, runs `mvn -B verify` in `backend/`, and uploads Surefire test reports even if verification fails.
-2. **Frontend (lint, test, build)** installs the locked npm dependencies with `npm ci`, then runs ESLint, Vitest, and the Next.js production build from `frontend/`.
-3. **Docker images** waits for both validation jobs (`needs: [backend, frontend]`) and builds backend and frontend images. On pull requests it builds without pushing. On a push to `main` it logs in to GitHub Container Registry (GHCR) and pushes images tagged with the commit SHA and `latest`.
-4. **Deploy to server** runs only after publishing succeeds, only for a push to `main`, and only when the repository variable `DEPLOY_ENABLED` is exactly `true`. It copies the production Compose file to the server, pulls the images, and restarts the services.
+1. **Backend (build and test)** checks out the repository, sets up Java 21 with Maven caching, runs `mvn -B verify` in `backend/`, and uploads test reports, compiled classes, and JaCoCo coverage for SonarQube.
+2. **Frontend (lint, test, build)** installs the locked npm dependencies with `npm ci`, then runs ESLint, Vitest with LCOV coverage, and the Next.js production build from `frontend/`.
+3. **SonarQube (backend and frontend quality gates)** runs after both validation jobs when `SONAR_ENABLED` is `true`. It imports the coverage reports and runs separate scans against the backend and frontend project configurations. Each scan waits for its own server quality-gate result.
+4. **Docker images** waits for backend and frontend validation and for SonarQube to pass when enabled. It builds backend and frontend images. On pull requests it builds without pushing. On a push to `main` it logs in to GitHub Container Registry (GHCR) and pushes images tagged with the commit SHA and `latest`.
+5. **Deploy to server** runs only after publishing succeeds, only for a push to `main`, and only when the repository variable `DEPLOY_ENABLED` is exactly `true`. It copies the production Compose file to the server, pulls the images, and restarts the services.
 
 The `concurrency` setting groups runs by Git ref and cancels older pull-request runs when a newer commit is pushed to that PR. The workflow starts with read-only repository permissions; the publish job separately grants package-write access.
 
@@ -39,12 +40,33 @@ The workflow runs validation on pull requests regardless of their base branch. T
 In **Settings → Rules → Rulesets**, create or update an active branch ruleset for each protected environment branch:
 
 - Require pull requests before merging.
-- Require the relevant CI status checks to pass. For `dev`, the job names are **Backend (build and test)** and **Frontend (lint, test, build)**.
-- Require at least one approval, dismiss stale approvals, and require conversation resolution.
+- Require the relevant CI status checks to pass. For `dev`, the job names are **Backend (build and test)** and **Frontend (lint, test, build)**. After enabling SonarQube and seeing it run once, also require **SonarQube (backend and frontend quality gates)**.
+- For a single-maintainer repository, set **Required approvals** to `0`: GitHub does not allow the PR author to approve their own pull request. Keep pull requests and CI checks required. In a team repository, require the number of independent approvals your policy needs.
+- Require conversation resolution. If approvals are required, dismiss stale approvals and consider requiring approval of the latest push.
 - Block force pushes and restrict deletions.
 - Require branches to be up to date if you want checks against the latest target-branch commit.
 
-Status checks must have run at least once before GitHub offers them in the required-check picker. Create a pull request, wait for the workflow to finish, then select the checks in the ruleset. Don't require CodeQL, coverage, or code-quality reports unless the repository has configured workflows that publish those results.
+Status checks must have run at least once before GitHub offers them in the required-check picker. Create a pull request, wait for the workflow to finish, then select the checks in the ruleset.
+
+### 2. Configure SonarQube
+
+The repository includes separate configurations: [`backend/sonar-project.properties`](../../backend/sonar-project.properties) and [`frontend/sonar-project.properties`](../../frontend/sonar-project.properties). Each scan has its own SonarQube project and quality gate. The inclusions limit analysis to backend services and category slug generation, and frontend catalog/auth/cart/data-access logic; page and presentation component files are excluded. The scans import backend JaCoCo XML and frontend Vitest LCOV coverage.
+
+1. Create two SonarQube projects with keys `akshaysidral_shop_backend` and `akshaysidral_shop_frontend` (or update `sonar.projectKey` in each configuration to match the keys you create).
+2. Create a SonarQube token with permission to analyze both projects.
+3. In **Settings → Secrets and variables → Actions**, add the `SONAR_TOKEN` secret and these repository variables:
+
+   | Name | Value |
+   |---|---|
+   | `SONAR_HOST_URL` | Your SonarQube server URL, for example `https://sonar.example.com` |
+   | `SONAR_ENABLED` | `true` to enable the SonarQube job |
+
+4. Configure each project to use the **Sonar way** quality gate (or an organization-approved equivalent). The workflow waits for each server result, so a failed backend or frontend gate fails the CI job.
+5. Run a pull request to publish the check, then add **SonarQube (backend and frontend quality gates)** to the required checks for protected branches.
+
+The Sonar job skips fork-originated pull requests because GitHub does not expose repository secrets to those workflows. For SonarCloud, use its host URL and create/configure the project in the correct organization before enabling the job.
+
+### 3. Configure production deployment
 
 ### 2. Configure production deployment
 

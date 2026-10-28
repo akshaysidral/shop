@@ -5,7 +5,7 @@ import type { Category } from "../api";
 import { apiError, makeProduct, renderApp } from "../testUtils";
 import ProductFormModal from "./ProductFormModal";
 
-const CATEGORIES: Category[] = [{ id: 3, name: "Electronics", icon: "phone", productCount: 1 }, { id: 4, name: "Books", icon: "books", productCount: 0 }];
+const CATEGORIES: Category[] = [{ id: 3, name: "Electronics", slug: "electronics", icon: "phone", productCount: 1 }, { id: 4, name: "Books", slug: "books", icon: "books", productCount: 0 }];
 
 function open(product = null as ReturnType<typeof makeProduct> | null) {
   const onClose = vi.fn();

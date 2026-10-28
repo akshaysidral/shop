@@ -1,19 +1,19 @@
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { api } from "./api";
-import type { ActiveOffer, Category } from "./api";
+import { api } from "../../api";
+import type { ActiveOffer, Category } from "../../api";
 import ProductList from "./ProductList";
-import { CartCount, makeProduct, renderApp, routeGet } from "./testUtils";
+import { CartCount, makeProduct, renderApp, routeGet } from "../../testUtils";
 
 const mouse = makeProduct({ id: 1, name: "Mouse", price: 800, finalPrice: 800, stock: 3 });
 const webcam = makeProduct({ id: 2, name: "Webcam", price: 2500, finalPrice: 2500, stock: 0 });
 const keyboard = makeProduct({ id: 3, name: "Keyboard", price: 3500, finalPrice: 2800, discountPercent: 20, stock: 9 });
-const electronics: Category = { id: 1, name: "Electronics", icon: "phone", productCount: 3 };
-const fashion: Category = { id: 2, name: "Fashion", icon: "fashion", productCount: 1 };
+const electronics: Category = { id: 1, name: "Electronics", slug: "electronics", icon: "phone", productCount: 3 };
+const fashion: Category = { id: 2, name: "Fashion", slug: "fashion", icon: "fashion", productCount: 1 };
 
-const list = (data: Record<string, unknown>, route = "/") => {
+const list = (data: Record<string, unknown>, route = "/", categorySlug?: string) => {
   routeGet(data);
-  return renderApp(<><CartCount /><ProductList /></>, { route });
+  return renderApp(<><CartCount /><ProductList categorySlug={categorySlug} /></>, { route });
 };
 
 describe("ProductList", () => {
@@ -109,10 +109,23 @@ describe("ProductList", () => {
     expect(await screen.findByRole("heading", { level: 2, name: "Electronics" })).toBeInTheDocument();
   });
 
+  it("resolves a category slug to its ID before filtering products", async () => {
+    list({ "/products": [mouse], "/categories": [electronics] }, "/category/electronics", "electronics");
+    await screen.findByText("Mouse");
+    expect(api.get).toHaveBeenCalledWith("/products", { params: { categoryId: 1 } });
+    expect(await screen.findByRole("heading", { level: 2, name: "Electronics" })).toBeInTheDocument();
+  });
+
+  it("does not fetch unfiltered products for an unknown category slug", async () => {
+    list({ "/categories": [electronics] }, "/category/not-a-category", "not-a-category");
+    expect(await screen.findByText("Category not found.")).toBeInTheDocument();
+    expect(api.get).not.toHaveBeenCalledWith("/products", expect.anything());
+  });
+
   it("filters by category when a category is clicked", async () => {
     list({ "/products": [mouse], "/categories": [electronics, fashion] });
     await userEvent.click(await screen.findByRole("button", { name: /fashion/i }));
-    expect(screen.getByTestId("location")).toHaveTextContent("/?category=2");
+    expect(screen.getByTestId("location")).toHaveTextContent("/category/fashion");
   });
 
   it("goes back to every category", async () => {

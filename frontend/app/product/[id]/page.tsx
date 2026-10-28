@@ -1,6 +1,6 @@
 "use client";
 
-import ProductDetail from "../../../src/ProductDetail";
+import ProductDetail from "../../../src/features/product/ProductDetail";
 
 export default function ProductPage() {
   return <ProductDetail />;
