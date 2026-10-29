@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.example.shop.model.Category;
+import com.example.shop.model.CategorySlug;
 import com.example.shop.repo.CategoryRepository;
 import com.example.shop.repo.ProductRepository;
 import com.example.shop.service.CategoryService;
@@ -31,6 +32,7 @@ class CategoryServiceTest {
     Category c = new Category();
     c.setId(id);
     c.setName(name);
+    c.setSlug(CategorySlug.fromName(name));
     c.setIcon("tag");
     return c;
   }
@@ -44,6 +46,7 @@ class CategoryServiceTest {
 
     assertEquals(2, list.size());
     assertEquals("Books", list.get(0).name());
+    assertEquals("books", list.get(0).slug());
     assertEquals(3, list.get(0).productCount());
     assertEquals(0, list.get(1).productCount());
   }
@@ -60,6 +63,7 @@ class CategoryServiceTest {
 
     assertEquals(9L, r.id());
     assertEquals("Toys", r.name());
+    assertEquals("toys", r.slug());
     assertEquals("gem", r.icon());
   }
 
@@ -92,6 +96,34 @@ class CategoryServiceTest {
     CategoryResponse r = service.update(1L, new CategoryRequest("Books", "books"));
 
     assertEquals("books", r.icon());
+    assertEquals("books", r.slug());
+  }
+
+  @Test void slugCollisionsReceiveUniqueNumericSuffixes() {
+    when(categories.findBySlug("books-stationery")).thenReturn(Optional.of(category(1, "Books Stationery")));
+    when(categories.findBySlug("books-stationery-2")).thenReturn(Optional.empty());
+    when(categories.save(any())).thenAnswer(inv -> {
+      Category c = inv.getArgument(0);
+      c.setId(9L);
+      return c;
+    });
+
+    CategoryResponse r = service.create(new CategoryRequest("Books-Stationery", null));
+
+    assertEquals("books-stationery-2", r.slug());
+  }
+
+  @Test void renamingCategoryKeepsItsExistingSlug() {
+    Category books = category(1, "Books");
+    when(categories.findById(1L)).thenReturn(Optional.of(books));
+    when(categories.findByName("Reading")).thenReturn(Optional.empty());
+    when(categories.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    CategoryResponse r = service.update(1L, new CategoryRequest("Reading", null));
+
+    assertEquals("Reading", r.name());
+    assertEquals("books", r.slug());
+    verify(categories, never()).findBySlug(any());
   }
 
   @Test void updatingAnUnknownCategoryIsNotFound() {

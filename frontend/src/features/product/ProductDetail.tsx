@@ -8,15 +8,15 @@ import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
-import type { Product } from "./api";
-import { BuyButton } from "./components/Buttons";
-import Loading from "./components/Loading";
-import PriceTag from "./components/PriceTag";
-import ProductImage from "./components/ProductImage";
-import SelectField from "./components/SelectField";
-import { useCart } from "./CartContext";
-import { AddToCartIcon, BoltIcon, SparkIcon } from "./icons";
-import { useFetch } from "./useFetch";
+import type { Product } from "../../api";
+import { BuyButton } from "../../components/Buttons";
+import Loading from "../../components/Loading";
+import PriceTag from "../../components/PriceTag";
+import ProductImage from "../../components/ProductImage";
+import SelectField from "../../components/SelectField";
+import { useCart } from "../../CartContext";
+import { AddToCartIcon, BoltIcon, SparkIcon } from "../../icons";
+import { useFetch } from "../../useFetch";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -41,7 +41,9 @@ export default function ProductDetail() {
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 1, fontSize: "0.85rem" }}>
           <Link component={NextLink} href="/" underline="hover">Home</Link>
           {product.categoryId && (
-            <Link component={NextLink} href={`/?category=${product.categoryId}`} underline="hover">{product.categoryName}</Link>
+            <Link component={NextLink}
+                  href={product.categorySlug ? `/category/${product.categorySlug}` : `/?category=${product.categoryId}`}
+                  underline="hover">{product.categoryName}</Link>
           )}
           <Typography color="text.primary" variant="body2">{product.name}</Typography>
         </Breadcrumbs>

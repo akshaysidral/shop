@@ -6,8 +6,8 @@ import { apiError, renderApp, routeGet } from "../../testUtils";
 import AdminCategories from "./AdminCategories";
 
 const CATS: Category[] = [
-  { id: 1, name: "Electronics", icon: "phone", productCount: 5 },
-  { id: 2, name: "Books", icon: "bi-journal-bookmark", productCount: 0 },
+  { id: 1, name: "Electronics", slug: "electronics", icon: "phone", productCount: 5 },
+  { id: 2, name: "Books", slug: "books", icon: "bi-journal-bookmark", productCount: 0 },
 ];
 
 const page = (list: Category[] = CATS) => {

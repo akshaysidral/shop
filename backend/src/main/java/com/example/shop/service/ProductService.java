@@ -121,7 +121,7 @@ public class ProductService {
     User s = p.getSeller();
     return new ProductResponse(p.getId(), p.getName(), p.getDescription(), p.getPrice(),
         price.finalPrice(), price.discountPercent(), price.offerName(), p.getStock(), p.getImageUrl(),
-        c == null ? null : c.getId(), c == null ? null : c.getName(),
+        c == null ? null : c.getId(), c == null ? null : c.getName(), c == null ? null : c.getSlug(),
         s == null ? null : s.getId(), s == null ? "Marketplace" : s.displayName());
   }
 }

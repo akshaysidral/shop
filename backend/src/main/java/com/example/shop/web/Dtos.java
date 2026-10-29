@@ -35,7 +35,7 @@ public final class Dtos {
   public record CategoryRequest(@NotBlank @Size(max = 60) String name, @Size(max = 40) String icon) {
   }
 
-  public record CategoryResponse(Long id, String name, String icon, long productCount) {
+  public record CategoryResponse(Long id, String name, String slug, String icon, long productCount) {
   }
 
   public record ProductRequest(@NotBlank @Size(max = 200) String name,
@@ -52,7 +52,7 @@ public final class Dtos {
    */
   public record ProductResponse(Long id, String name, String description, BigDecimal price,
       BigDecimal finalPrice, int discountPercent, String offerName,
-      int stock, String imageUrl, Long categoryId, String categoryName,
+      int stock, String imageUrl, Long categoryId, String categoryName, String categorySlug,
       Long sellerId, String sellerName) {
   }
 

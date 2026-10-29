@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import NotFound from "./NotFound";
-import { renderApp } from "./testUtils";
+import { renderApp } from "../../testUtils";
 
 describe("NotFound", () => {
   it("says the page is missing and links home", () => {

@@ -21,6 +21,7 @@ export function makeProduct(overrides: Partial<Product> = {}): Product {
     imageUrl: null,
     categoryId: 1,
     categoryName: "Electronics",
+    categorySlug: "electronics",
     sellerId: 7,
     sellerName: "Acme",
     ...overrides,

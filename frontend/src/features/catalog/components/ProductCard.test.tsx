@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CartCount, makeProduct, renderApp } from "../testUtils";
+import { CartCount, makeProduct, renderApp } from "../../../testUtils";
 import ProductCard from "./ProductCard";
 
 const card = (product = makeProduct()) => renderApp(<><CartCount /><ProductCard product={product} /></>);

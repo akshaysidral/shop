@@ -1,8 +1,8 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { api } from "./api";
+import { api } from "../../api";
 import LoginPage from "./LoginPage";
-import { apiError, renderApp } from "./testUtils";
+import { apiError, renderApp } from "../../testUtils";
 
 function setup(state?: unknown) {
   const onAuth = vi.fn();

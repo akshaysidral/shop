@@ -37,8 +37,12 @@ export default function Header() {
     e.preventDefault();
     const next = new URLSearchParams();
     if (q.trim()) next.set("q", q.trim());
-    if (cat) next.set("category", cat);
     const qs = next.toString();
+    const selected = categories.data?.find((category) => String(category.id) === cat);
+    if (selected) {
+      router.push(`/category/${selected.slug}${qs ? `?${qs}` : ""}`);
+      return;
+    }
     router.push(qs ? `/?${qs}` : "/");
   }
 

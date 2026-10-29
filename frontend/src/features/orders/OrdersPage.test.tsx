@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
-import type { Order } from "./api";
+import type { Order } from "../../api";
 import OrdersPage from "./OrdersPage";
-import { renderApp, routeGet } from "./testUtils";
+import { renderApp, routeGet } from "../../testUtils";
 
 const ORDER: Order = {
   id: 7, userEmail: "a@b.com", status: "SHIPPED", createdAt: "2030-01-01T10:00:00Z", total: 1600,
