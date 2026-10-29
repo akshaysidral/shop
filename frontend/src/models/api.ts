@@ -35,11 +35,12 @@ export type Product = {
   imageUrl: string | null;
   categoryId: number | null;
   categoryName: string | null;
+  categorySlug: string | null;
   sellerId: number | null;
   sellerName: string;
 };
 
-export type Category = { id: number; name: string; icon: string | null; productCount: number };
+export type Category = { id: number; name: string; slug: string; icon: string | null; productCount: number };
 
 export type OfferStatus = "LIVE" | "SCHEDULED" | "ENDED" | "PAUSED";
 export type Offer = {

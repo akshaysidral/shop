@@ -7,7 +7,7 @@ access control, PostgreSQL, Docker and a GitHub Actions CI/CD pipeline.
 
 | Layer | Tech |
 |---|---|
-| Frontend | React 18, TypeScript, Vite, **Material UI (MUI) 7**, React Router, Axios, Vitest + Testing Library, ESLint |
+| Frontend | React, TypeScript, Next.js App Router, **Material UI (MUI) 7**, Axios, Vitest + Testing Library, ESLint |
 | Backend | Java 21, Spring Boot 3.3, Spring Security (JWT), Spring Data JPA, PostgreSQL, JUnit 5 + Mockito |
 | DevOps | Docker, Docker Compose, GitHub Actions, GitHub Container Registry |
 
@@ -46,7 +46,7 @@ Admins set rates on **Admin panel > Sellers & commission** and see the commissio
 ```
 shop/
 ├── backend/                Spring Boot API (Maven)
-├── frontend/               React storefront, Seller Hub and Admin panel (Vite + MUI)
+├── frontend/               Next.js App Router storefront, Seller Hub and Admin panel (React + MUI)
 ├── postman/                Postman collection
 ├── docs/                   extra documentation
 ├── .github/workflows/      CI/CD pipeline
@@ -94,9 +94,10 @@ environment** (`APP_ADMIN_*`, `APP_SELLER_*`, `APP_SELLER2_*`).
 | Full stack in Docker | `docker compose up --build` |
 
 ## Testing
-Every layer has tests: backend model, DTOs, security guard, every service (Mockito), pricing and commission maths,
-and integration tests for each controller flow (including one table that checks the security of every protected
-endpoint); frontend tests next to every component, page, hook and context. See the backend and frontend READMEs.
+The backend tests cover models, DTOs, security, services, pricing and commission calculations, plus controller
+integration flows. Frontend tests cover key features and shared logic; the SonarCloud quality gate focuses on
+selected business-logic files rather than requiring a test for every page or presentation component. See the backend
+and frontend READMEs for test and coverage commands.
 
 ## Known gaps
 - No payment step, shipping addresses or product reviews. Commission is calculated and reported; paying sellers out

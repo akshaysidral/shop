@@ -11,13 +11,13 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
-import { api, errMsg } from "./api";
-import { BuyButton } from "./components/Buttons";
-import PriceTag from "./components/PriceTag";
-import ProductImage from "./components/ProductImage";
-import { useCart } from "./CartContext";
-import { AddIcon, DeleteIcon, EmptyCartIcon, RemoveIcon } from "./icons";
-import { money } from "./format";
+import { api, errMsg } from "../../api";
+import { BuyButton } from "../../components/Buttons";
+import PriceTag from "../../components/PriceTag";
+import ProductImage from "../../components/ProductImage";
+import { useCart } from "../../CartContext";
+import { AddIcon, DeleteIcon, EmptyCartIcon, RemoveIcon } from "../../icons";
+import { money } from "../../format";
 
 export default function CartPage() {
   const { lines, setQty, remove, clear, total, count } = useCart();

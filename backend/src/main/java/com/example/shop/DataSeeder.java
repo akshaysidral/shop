@@ -1,6 +1,7 @@
 package com.example.shop;
 
 import com.example.shop.model.Category;
+import com.example.shop.model.CategorySlug;
 import com.example.shop.model.Offer;
 import com.example.shop.model.Permission;
 import com.example.shop.model.Product;
@@ -15,12 +16,15 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -150,12 +154,32 @@ public class DataSeeder implements CommandLineRunner {
       cat("Beauty & Care", "beauty");
       cat("Sports & Fitness", "sports");
     }
+    backfillCategorySlugs();
     return categories.findAll().stream().collect(Collectors.toMap(Category::getName, c -> c));
+  }
+
+  private void backfillCategorySlugs() {
+    List<Category> existing = categories.findAll(Sort.by("id"));
+    Set<String> used = new HashSet<>();
+    existing.stream().map(Category::getSlug).filter(slug -> slug != null && !slug.isBlank()).forEach(used::add);
+    for (Category category : existing) {
+      if (category.getSlug() != null && !category.getSlug().isBlank())
+        continue;
+      String base = CategorySlug.fromName(category.getName());
+      String slug = base;
+      int suffix = 2;
+      while (used.contains(slug))
+        slug = base + "-" + suffix++;
+      category.setSlug(slug);
+      used.add(slug);
+    }
+    categories.saveAll(existing);
   }
 
   private void cat(String name, String icon) {
     Category c = new Category();
     c.setName(name);
+    c.setSlug(CategorySlug.fromName(name));
     c.setIcon(icon);
     categories.save(c);
   }

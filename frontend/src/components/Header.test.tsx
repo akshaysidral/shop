@@ -6,8 +6,8 @@ import { useCart } from "../CartContext";
 import Header from "./Header";
 
 const CATEGORIES: Category[] = [
-  { id: 1, name: "Electronics", icon: "phone", productCount: 5 },
-  { id: 2, name: "Fashion", icon: "fashion", productCount: 3 },
+  { id: 1, name: "Electronics", slug: "electronics", icon: "phone", productCount: 5 },
+  { id: 2, name: "Fashion", slug: "fashion", icon: "fashion", productCount: 3 },
 ];
 
 function AddTwo() {
@@ -101,7 +101,7 @@ describe("Header search", () => {
     await userEvent.selectOptions(screen.getByLabelText("Search category"), "2");
     await userEvent.type(screen.getByLabelText("Search products"), "shirt");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
-    expect(screen.getByTestId("location")).toHaveTextContent("/?q=shirt&category=2");
+    expect(screen.getByTestId("location")).toHaveTextContent("/category/fashion?q=shirt");
   });
 
   it("browses a whole category without words", async () => {
@@ -109,7 +109,7 @@ describe("Header search", () => {
     await screen.findByRole("option", { name: "Electronics" });
     await userEvent.selectOptions(screen.getByLabelText("Search category"), "1");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
-    expect(screen.getByTestId("location")).toHaveTextContent("/?category=1");
+    expect(screen.getByTestId("location")).toHaveTextContent("/category/electronics");
   });
 
   it("goes home when the search is empty", async () => {

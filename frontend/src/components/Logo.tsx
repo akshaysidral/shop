@@ -1,12 +1,13 @@
 import { useId } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import styles from "./Logo.module.css";
 
 /** Bazario logo: a shopping bag with a saffron spark, plus the wordmark. */
 export default function Logo({ size = 34, light = false, withText = true }: { size?: number; light?: boolean; withText?: boolean }) {
   const gid = `bz${useId().replace(/:/g, "")}`;
   return (
-    <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
+    <Box component="span" className={styles.logo}>
       <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Bazario logo">
         <defs>
           <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
@@ -20,7 +21,7 @@ export default function Logo({ size = 34, light = false, withText = true }: { si
         <path d="M47 7l2.2 5.8L55 15l-5.8 2.2L47 23l-2.2-5.8L39 15l5.8-2.2z" fill="#ffb400" />
       </svg>
       {withText && (
-        <Typography component="span" sx={{ fontWeight: 800, fontSize: "1.4rem", letterSpacing: -0.5, lineHeight: 1, color: light ? "#fff" : "#3730a3" }}>
+        <Typography component="span" className={`${styles.wordmark} ${light ? styles.light : ""}`}>
           Bazario
         </Typography>
       )}

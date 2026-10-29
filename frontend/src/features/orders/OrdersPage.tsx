@@ -5,13 +5,13 @@ import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
-import type { Order } from "./api";
-import { useAuth } from "./AuthContext";
-import Loading from "./components/Loading";
-import ProductImage from "./components/ProductImage";
-import StatusChip from "./components/StatusChip";
-import { money } from "./format";
-import { useFetch } from "./useFetch";
+import type { Order } from "../../api";
+import { useAuth } from "../../AuthContext";
+import Loading from "../../components/Loading";
+import ProductImage from "../../components/ProductImage";
+import StatusChip from "../../components/StatusChip";
+import { money } from "../../format";
+import { useFetch } from "../../useFetch";
 
 export default function OrdersPage() {
   const { user, loading: authLoading } = useAuth();

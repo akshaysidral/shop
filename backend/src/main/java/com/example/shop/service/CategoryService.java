@@ -1,6 +1,7 @@
 package com.example.shop.service;
 
 import com.example.shop.model.Category;
+import com.example.shop.model.CategorySlug;
 import com.example.shop.repo.CategoryRepository;
 import com.example.shop.repo.ProductRepository;
 import com.example.shop.web.Dtos.CategoryRequest;
@@ -31,6 +32,7 @@ public class CategoryService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
     Category c = new Category();
     c.setName(name);
+    c.setSlug(uniqueSlug(name, null));
     c.setIcon(r.icon());
     return view(categories.save(c));
   }
@@ -42,6 +44,8 @@ public class CategoryService {
     if (categories.findByName(name).filter(x -> !x.getId().equals(id)).isPresent())
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
     c.setName(name);
+    if (c.getSlug() == null)
+      c.setSlug(uniqueSlug(name, id));
     c.setIcon(r.icon());
     return view(categories.save(c));
   }
@@ -60,6 +64,20 @@ public class CategoryService {
   }
 
   private CategoryResponse view(Category c) {
-    return new CategoryResponse(c.getId(), c.getName(), c.getIcon(), products.countByCategory_Id(c.getId()));
+    return new CategoryResponse(c.getId(), c.getName(),
+        c.getSlug() == null ? CategorySlug.fromName(c.getName()) : c.getSlug(),
+        c.getIcon(), products.countByCategory_Id(c.getId()));
+  }
+
+  private String uniqueSlug(String name, Long excludedId) {
+    String base = CategorySlug.fromName(name);
+    String candidate = base;
+    int suffix = 2;
+    while (categories.findBySlug(candidate)
+        .filter(category -> excludedId == null || !excludedId.equals(category.getId()))
+        .isPresent()) {
+      candidate = base + "-" + suffix++;
+    }
+    return candidate;
   }
 }
