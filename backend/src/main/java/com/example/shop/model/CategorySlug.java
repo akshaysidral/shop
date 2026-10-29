@@ -11,8 +11,16 @@ public final class CategorySlug {
     String normalized = Normalizer.normalize(name, Normalizer.Form.NFD)
         .replaceAll("\\p{M}", "")
         .toLowerCase(Locale.ROOT)
-        .replaceAll("[^a-z0-9]+", "-")
-        .replaceAll("(^-+|-+$)", "");
+        .replaceAll("[^a-z0-9]+", "-");
+    int start = 0;
+    int end = normalized.length();
+    while (start < end && normalized.charAt(start) == '-') {
+      start++;
+    }
+    while (end > start && normalized.charAt(end - 1) == '-') {
+      end--;
+    }
+    normalized = normalized.substring(start, end);
     return normalized.isBlank() ? "category" : normalized;
   }
 }
