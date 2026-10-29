@@ -50,20 +50,20 @@ Status checks must have run at least once before GitHub offers them in the requi
 
 ### 2. Configure SonarQube
 
-The repository includes separate configurations: [`backend/sonar-project.properties`](../../backend/sonar-project.properties) and [`frontend/sonar-project.properties`](../../frontend/sonar-project.properties). Each scan has its own SonarQube project and quality gate. The inclusions limit analysis to backend services and category slug generation, and frontend catalog/auth/cart/data-access logic; page and presentation component files are excluded. The scans import backend JaCoCo XML and frontend Vitest LCOV coverage.
+The repository includes separate configurations: [`backend/sonar-project.properties`](../../backend/sonar-project.properties) and [`frontend/sonar-project.properties`](../../frontend/sonar-project.properties). Both use the SonarCloud organization key `akshaysidral`; each scan has its own project and quality gate (`akshaysidral_shop_backend` and `akshaysidral_shop_frontend`). The existing `akshaysidral_shop` project is not used by these separate scans. The inclusions limit analysis to backend services and category slug generation, and frontend catalog/auth/cart/data-access logic; page and presentation component files are excluded. The scans import backend JaCoCo XML and frontend Vitest LCOV coverage.
 
-1. Create two SonarQube projects with keys `akshaysidral_shop_backend` and `akshaysidral_shop_frontend` (or update `sonar.projectKey` in each configuration to match the keys you create).
+1. In the `akshaysidral` organization, create two SonarCloud projects with keys `akshaysidral_shop_backend` and `akshaysidral_shop_frontend` (or update `sonar.projectKey` in each configuration to match the keys you create).
 2. Create a SonarQube token with permission to analyze both projects.
 3. In **Settings → Secrets and variables → Actions**, add the `SONAR_TOKEN` secret and the `SONAR_HOST_URL` repository variable:
 
    | Name | Value |
-   |---|---|
+   |------|-------|
    | `SONAR_HOST_URL` | Your SonarQube server URL, for example `https://sonar.example.com` |
 
 4. Configure each project to use the **Sonar way** quality gate (or an organization-approved equivalent). The workflow waits for each server result, so a failed backend or frontend gate fails the CI job.
 5. Run a pull request to publish the check, then add **SonarQube (backend and frontend quality gates)** to the required checks for protected branches.
 
-The Sonar job always runs for pushes and same-repository pull requests; a missing token or host URL causes the scan to fail rather than silently skip. Fork-originated pull requests are skipped because GitHub does not expose repository secrets to those workflows. For SonarCloud, use its host URL and create/configure the projects in the correct organization.
+The Sonar job always runs for pushes and same-repository pull requests; a missing token or host URL causes the scan to fail rather than silently skip. Fork-originated pull requests are skipped because GitHub does not expose repository secrets to those workflows. For SonarCloud, the host URL is `https://sonarcloud.io`; the organization key is configured in both project property files.
 
 ### 3. Configure production deployment
 
