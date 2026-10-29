@@ -31,7 +31,7 @@ feature/* or bugfix/*
                                           └── Optional production deployment
 ```
 
-The workflow runs validation on pull requests regardless of their base branch. The current `push` trigger is limited to `main`; merging to `dev`, `tst`, or `stg` does not independently trigger a push run. Each protected branch needs a GitHub ruleset if merges into it must require reviews and successful checks.
+The workflow runs validation and SonarCloud analysis on same-repository pull requests regardless of their base branch. The current `push` trigger is limited to `main`; merging to `dev`, `tst`, or `stg` does not independently trigger a push run. PR checks still run before merges when required by the branch ruleset. Each protected branch needs a GitHub ruleset if merges into it must require reviews and successful checks.
 
 ## Configure this repository
 
@@ -40,7 +40,7 @@ The workflow runs validation on pull requests regardless of their base branch. T
 In **Settings → Rules → Rulesets**, create or update an active branch ruleset for each protected environment branch:
 
 - Require pull requests before merging.
-- Require the relevant CI status checks to pass. For `dev`, the job names are **Backend (build and test)** and **Frontend (lint, test, build)**. After enabling SonarQube and seeing it run once, also require **SonarQube (backend and frontend quality gates)**.
+- Require the relevant CI status checks to pass. For `dev`, require **Backend (build and test)**, **Frontend (lint, test, build)**, and **SonarQube (backend and frontend quality gates)**. The Sonar check is available after it has run at least once.
 - For a single-maintainer repository, set **Required approvals** to `0`: GitHub does not allow the PR author to approve their own pull request. Keep pull requests and CI checks required. In a team repository, require the number of independent approvals your policy needs.
 - Require conversation resolution. If approvals are required, dismiss stale approvals and consider requiring approval of the latest push.
 - Block force pushes and restrict deletions.
@@ -50,24 +50,22 @@ Status checks must have run at least once before GitHub offers them in the requi
 
 ### 2. Configure SonarQube
 
-The repository includes separate configurations: [`backend/sonar-project.properties`](../../backend/sonar-project.properties) and [`frontend/sonar-project.properties`](../../frontend/sonar-project.properties). Both use the SonarCloud organization key `akshaysidral`; each scan has its own project and quality gate (`akshaysidral_shop_backend` and `akshaysidral_shop_frontend`). The existing `akshaysidral_shop` project is not used by these separate scans. The inclusions limit analysis to backend services and category slug generation, and frontend catalog/auth/cart/data-access logic; page and presentation component files are excluded. The scans import backend JaCoCo XML and frontend Vitest LCOV coverage.
+The repository includes separate configurations: [`backend/sonar-project.properties`](../../backend/sonar-project.properties) and [`frontend/sonar-project.properties`](../../frontend/sonar-project.properties). Both use SonarCloud organization key `akshaysidral`; the project keys are `akshaysidral_shop_backend` and `akshaysidral_shop_frontend`. The older `akshaysidral_shop` project is not used by these scans. Analysis is scoped to backend services and category slug generation, plus frontend catalog/auth/cart/data-access logic—not pages or presentation components. The scans import backend JaCoCo XML and frontend Vitest LCOV coverage. Both SonarCloud projects must exist under the `akshaysidral` organization before scanning.
 
-1. In the `akshaysidral` organization, create two SonarCloud projects with keys `akshaysidral_shop_backend` and `akshaysidral_shop_frontend` (or update `sonar.projectKey` in each configuration to match the keys you create).
-2. Create a SonarQube token with permission to analyze both projects.
-3. In **Settings → Secrets and variables → Actions**, add the `SONAR_TOKEN` secret and the `SONAR_HOST_URL` repository variable:
+1. Create a SonarCloud token for an account authorized to analyze both projects.
+2. In GitHub **Settings → Secrets and variables → Actions**, add these at the repository level:
 
-   | Name | Value |
-   |------|-------|
-   | `SONAR_HOST_URL` | Your SonarQube server URL, for example `https://sonar.example.com` |
+   | Type | Name | Value |
+   |---|---|---|
+   | Repository secret | `SONAR_TOKEN` | Your SonarCloud analysis token |
+   | Repository variable | `SONAR_HOST_URL` | `https://sonarcloud.io` |
 
-4. Configure each project to use the **Sonar way** quality gate (or an organization-approved equivalent). The workflow waits for each server result, so a failed backend or frontend gate fails the CI job.
-5. Run a pull request to publish the check, then add **SonarQube (backend and frontend quality gates)** to the required checks for protected branches.
+3. Configure each project to use the **Sonar way** quality gate (or an organization-approved equivalent). The workflow waits for both results, so either failing gate fails the combined Sonar job.
+4. Run a same-repository pull request. Confirm both analyses succeed and each project shows a recent analysis in SonarCloud. Then require **SonarQube (backend and frontend quality gates)** in the rulesets for protected branches.
 
-The Sonar job always runs for pushes and same-repository pull requests; a missing token or host URL causes the scan to fail rather than silently skip. Fork-originated pull requests are skipped because GitHub does not expose repository secrets to those workflows. For SonarCloud, the host URL is `https://sonarcloud.io`; the organization key is configured in both project property files.
+The Sonar job runs for pushes and same-repository pull requests; a missing token or host URL causes the scan to fail rather than silently skip. Fork-originated pull requests skip SonarCloud because GitHub does not expose repository secrets to those workflows. Push-triggered analysis currently runs only on `main`; PR analysis alone does not count as a default-branch analysis. If `dev` is the SonarCloud default branch and you want a post-merge analysis there, add `dev` to the workflow's `push.branches` list.
 
 ### 3. Configure production deployment
-
-### 2. Configure production deployment
 
 The deploy job expects:
 

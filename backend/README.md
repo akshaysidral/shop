@@ -10,7 +10,7 @@ mvn verify                       # compile + every test (in-memory H2, no databa
 ```
 Requires JDK 21 and Maven (`brew install maven openjdk@21` on macOS).
 
-`mvn verify` also generates the JaCoCo XML report at `target/site/jacoco/jacoco.xml` for SonarQube. The backend Sonar project is configured in [`sonar-project.properties`](sonar-project.properties) and analyzes backend services and the category-slug domain helper; it does not require adding a test for every controller or view.
+`mvn verify` also generates the JaCoCo XML report at `target/site/jacoco/jacoco.xml` for SonarCloud. The backend project key is `akshaysidral_shop_backend`, configured in [`sonar-project.properties`](sonar-project.properties) under organization `akshaysidral`. Its analysis scope is backend services and the category-slug domain helper; this quality gate does not require a separate test for every controller or view. CI also runs the frontend SonarCloud project and waits for both quality gates.
 
 ## Database
 PostgreSQL at `localhost:5432`, database `shop`, user `shop`, password `shop`.
