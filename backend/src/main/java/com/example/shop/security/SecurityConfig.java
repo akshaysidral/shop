@@ -56,6 +56,7 @@ public class SecurityConfig {
     c.setAllowedOrigins(List.of(corsOrigin.split(",")));
     c.setAllowedMethods(List.of("*"));
     c.setAllowedHeaders(List.of("*"));
+    c.setAllowCredentials(true);
     var s = new UrlBasedCorsConfigurationSource();
     s.registerCorsConfiguration("/**", c);
     return s;
