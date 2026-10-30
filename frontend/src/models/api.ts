@@ -2,7 +2,14 @@ import axios from "axios";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api",
+  withCredentials: true,
 });
+
+declare module "axios" {
+  interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+  }
+}
 
 api.interceptors.request.use((cfg) => {
   const t = localStorage.getItem("token");
@@ -10,13 +17,56 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-// Expired / invalid token: forget it and tell the app (AuthContext listens for this event).
+let refreshInFlight: Promise<string | null> | null = null;
+
+function expireSession() {
+  localStorage.removeItem("token");
+  window.dispatchEvent(new Event("auth:expired"));
+}
+
+export function refreshAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = api.post<{ token: string }>("/auth/refresh")
+      .then(({ data }) => {
+        localStorage.setItem("token", data.token);
+        return data.token;
+      })
+      .catch((error: unknown) => {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          expireSession();
+          return null;
+        }
+        throw error;
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
 api.interceptors.response.use(
   (r) => r,
-  (err) => {
-    if (axios.isAxiosError(err) && err.response?.status === 401 && localStorage.getItem("token")) {
-      localStorage.removeItem("token");
-      window.dispatchEvent(new Event("auth:expired"));
+  async (err: unknown) => {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      const request = err.config;
+      const url = request?.url ?? "";
+      const isAuthRequest = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"]
+        .some((path) => url.endsWith(path));
+
+      if (request && !request._retry && !isAuthRequest) {
+        request._retry = true;
+        const token = await refreshAccessToken();
+        if (!token) {
+          return Promise.reject(err);
+        }
+        request.headers.Authorization = `Bearer ${token}`;
+        return api.request(request);
+      }
+
+      if (!isAuthRequest) {
+        expireSession();
+      }
     }
     return Promise.reject(err);
   },

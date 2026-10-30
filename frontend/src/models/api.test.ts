@@ -48,6 +48,30 @@ describe("API client business logic", () => {
     expect(authorization).toBe("Bearer session-token");
   });
 
+  it("refreshes an expired access token and retries the original request once", async () => {
+    localStorage.setItem("token", "expired-token");
+    const calls: string[] = [];
+    api.defaults.adapter = async (config) => {
+      calls.push(config.url ?? "");
+      const response = {
+        data: config.url === "/auth/refresh" ? { token: "fresh-token" } : {},
+        status: config.url === "/private" && config.headers.get("Authorization") !== "Bearer fresh-token" ? 401 : 200,
+        statusText: "OK",
+        headers: new AxiosHeaders(),
+        config,
+      };
+      if (response.status === 401) {
+        return Promise.reject(new AxiosError("Unauthorized", undefined, config, undefined, response));
+      }
+      return response;
+    };
+
+    await expect(api.get("/private")).resolves.toMatchObject({ status: 200 });
+
+    expect(calls).toEqual(["/private", "/auth/refresh", "/private"]);
+    expect(localStorage.getItem("token")).toBe("fresh-token");
+  });
+
   it("clears an expired token and emits the session-expired event", async () => {
     localStorage.setItem("token", "expired-token");
     respondWith(401);

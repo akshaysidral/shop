@@ -30,7 +30,13 @@ app:
   cors-origin: ${APP_CORS_ORIGIN:http://localhost:3000,http://localhost:3001}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
-    expiration-ms: 86400000
+    expiration-ms: ${APP_JWT_EXPIRATION_MS:900000}
+  auth:
+    refresh-token:
+      expiration-ms: ${APP_REFRESH_TOKEN_EXPIRATION_MS:604800000}
+      cookie:
+        secure: ${APP_REFRESH_COOKIE_SECURE:false}
+        same-site: ${APP_REFRESH_COOKIE_SAME_SITE:Lax}
 server:
   error:
     include-message: always

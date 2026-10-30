@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { api } from "./api";
+import { api, refreshAccessToken } from "./api";
 
 vi.mock("next/link", () => ({
   default: React.forwardRef<HTMLAnchorElement, React.AnchorHTMLAttributes<HTMLAnchorElement>>(
@@ -36,9 +36,11 @@ vi.mock("next/navigation", () => {
 vi.mock("./api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./api")>()),
   api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+  refreshAccessToken: vi.fn(),
 }));
 
 beforeEach(() => {
+  vi.mocked(refreshAccessToken).mockReset();
   for (const fn of [api.get, api.post, api.put, api.patch, api.delete]) {
     vi.mocked(fn).mockReset();
   }
