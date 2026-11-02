@@ -1,12 +1,12 @@
 package com.example.shop;
 
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,6 +17,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,7 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 /** One table of every protected endpoint: anonymous callers get 401, plain buyers get 403 where a permission is needed. */
-@SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test") @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test") @Import(MockCsrfConfig.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class EndpointSecurityTest {
   @Autowired MockMvc mvc;
 
@@ -42,13 +44,13 @@ class EndpointSecurityTest {
     @Override public String toString() { return method + " " + path; }
   }
 
-  private String buyerToken;
+  private Cookie buyerSession;
 
   @BeforeAll void registerBuyer() throws Exception {
-    String res = mvc.perform(post("/api/auth/register").contentType(JSON)
+    var response = mvc.perform(post("/api/auth/register").contentType(JSON)
         .content("{\"email\":\"endpoint-buyer@t.com\",\"password\":\"secret1\"}"))
-        .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
-    buyerToken = JsonPath.read(res, "$.token");
+        .andExpect(status().isCreated()).andReturn().getResponse();
+    buyerSession = TestSessions.sessionCookie(TestSessions.sessionId(response));
   }
 
   static Stream<Endpoint> protectedEndpoints() {
@@ -80,6 +82,8 @@ class EndpointSecurityTest {
         new Endpoint("PATCH", "/api/orders/1/status", STATUS),
         new Endpoint("DELETE", "/api/orders/1", null),
         new Endpoint("GET", "/api/seller/products", null),
+        new Endpoint("POST", "/api/seller/products/1/image-upload-url",
+            "{\"contentType\":\"image/png\",\"fileSizeBytes\":1024}"),
         new Endpoint("GET", "/api/seller/orders", null),
         new Endpoint("GET", "/api/seller/earnings", null),
         new Endpoint("PATCH", "/api/seller/orders/1/items/1/status", STATUS),
@@ -92,28 +96,30 @@ class EndpointSecurityTest {
     return protectedEndpoints().filter(e -> !LOGGED_IN_ONLY.contains(e.toString()));
   }
 
-  private static MockHttpServletRequestBuilder build(Endpoint e) {
+  private MockHttpServletRequestBuilder build(Endpoint e, boolean authenticated) {
     MockHttpServletRequestBuilder b = request(HttpMethod.valueOf(e.method()), e.path());
     if (e.body() != null) b.contentType(JSON).content(e.body());
+    if (authenticated) b.cookie(buyerSession);
     return b;
   }
 
   @ParameterizedTest(name = "{0} needs a login") @MethodSource("protectedEndpoints")
   void anonymousCallersAreUnauthorized(Endpoint e) throws Exception {
-    mvc.perform(build(e)).andExpect(status().isUnauthorized());
+    mvc.perform(build(e, false)).andExpect(status().isUnauthorized());
   }
 
   @ParameterizedTest(name = "{0} needs a permission buyers lack") @MethodSource("permissionEndpoints")
   void buyersAreForbidden(Endpoint e) throws Exception {
-    mvc.perform(build(e).header("Authorization", "Bearer " + buyerToken)).andExpect(status().isForbidden());
+    mvc.perform(build(e, true)).andExpect(status().isForbidden());
   }
 
   @ParameterizedTest(name = "{0} is open to any logged-in user") @MethodSource("protectedEndpoints")
   void loggedInOnlyEndpointsAreNotRefusedToBuyers(Endpoint e) throws Exception {
-    if (!LOGGED_IN_ONLY.contains(e.toString())) return;
-    int status = mvc.perform(build(e).header("Authorization", "Bearer " + buyerToken)).andReturn().getResponse().getStatus();
-    assertNotEquals(401, status);
-    assertNotEquals(403, status);
+    if (LOGGED_IN_ONLY.contains(e.toString())) {
+      int result = mvc.perform(build(e, true)).andReturn().getResponse().getStatus();
+      assertNotEquals(401, result);
+      assertNotEquals(403, result);
+    }
   }
 
   @Test void theCatalogueIsPublic() throws Exception {

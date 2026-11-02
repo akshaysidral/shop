@@ -12,9 +12,12 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class Dtos {
+  public static final long MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+
   private Dtos() {
   }
 
@@ -28,7 +31,7 @@ public final class Dtos {
       @Size(max = 100) String storeName) {
   }
 
-  public record AuthResponse(String token) {
+  public record CsrfResponse(String token) {
   }
 
   // ---------------- catalogue ----------------
@@ -44,6 +47,15 @@ public final class Dtos {
       @PositiveOrZero int stock,
       Long categoryId,
       @Size(max = 500) String imageUrl) {
+  }
+
+  public record ImageUploadRequest(
+      @NotBlank @Pattern(regexp = "image/(jpeg|png|webp)", message = "must be JPEG, PNG, or WebP") String contentType,
+      @NotNull @Positive @Max(MAX_IMAGE_SIZE_BYTES) Long fileSizeBytes) {
+  }
+
+  public record ImageUploadUrlResponse(String objectKey, String uploadUrl, Instant expiresAt,
+      Map<String, String> requiredHeaders) {
   }
 
   /**

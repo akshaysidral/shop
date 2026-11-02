@@ -16,11 +16,13 @@ import { BuyButton } from "../../components/Buttons";
 import PriceTag from "../../components/PriceTag";
 import ProductImage from "../../components/ProductImage";
 import { useCart } from "../../CartContext";
+import { useAuth } from "../../AuthContext";
 import { AddIcon, DeleteIcon, EmptyCartIcon, RemoveIcon } from "../../icons";
 import { money } from "../../format";
 
 export default function CartPage() {
   const { lines, setQty, remove, clear, total, count } = useCart();
+  const { user, loading } = useAuth();
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -29,7 +31,7 @@ export default function CartPage() {
   const savings = listTotal - total;
 
   async function checkout() {
-    if (!localStorage.getItem("token")) return router.push("/login?from=%2Fcart");
+    if (!user && !loading) return router.push("/login?from=%2Fcart");
     setBusy(true);
     try {
       await api.post("/orders", { items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })) });
@@ -97,7 +99,7 @@ export default function CartPage() {
         </Box>
         {savings > 0 && <Typography variant="body2" color="success.main" sx={{ mb: 1 }}>You will save {money(savings)} on this order</Typography>}
         {msg && <Alert severity="error" sx={{ mb: 1 }}>{msg}</Alert>}
-        <BuyButton fullWidth variant="contained" size="large" onClick={checkout} disabled={busy}>
+        <BuyButton fullWidth variant="contained" size="large" onClick={checkout} disabled={busy || loading}>
           {busy ? "Placing order..." : "Place order"}
         </BuyButton>
       </Paper>

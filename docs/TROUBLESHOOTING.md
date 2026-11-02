@@ -13,9 +13,9 @@
 ## API returns errors
 | Symptom | Cause and fix |
 |---|---|
-| `401` on `/api/me` or any protected URL | No valid token. Log in at `POST /api/auth/login`, then send `Authorization: Bearer <token>` (Postman: Authorization tab > Bearer Token, paste only the token). Credentials are never sent to `/api/me`. |
+| `401` on `/api/me` or any protected URL | No valid session cookie. Log in at `POST /api/auth/login` with the Postman cookie jar enabled, then retry. The browser sends the `HttpOnly` session cookie automatically. |
 | `401` on login | Wrong email/password, or the admin account was not created (check `APP_ADMIN_EMAIL` / `APP_ADMIN_PASSWORD`). |
-| `403` | Token is valid but the user lacks the permission, or tried to grant a permission they do not hold. Check `GET /api/me`. |
+| `403` | The session lacks the required permission, a CSRF token is missing/invalid, or the request origin is not allowed. Check `GET /api/me` and obtain a fresh token from `GET /api/auth/csrf` for unsafe requests. |
 | Empty 401 hiding the real error | `/error` must be permitted in `SecurityConfig` (it is in this project). |
 | Postman sees nothing in the terminal | Spring does not log requests by default. Add `logging.level.org.springframework.security=DEBUG` temporarily. |
 

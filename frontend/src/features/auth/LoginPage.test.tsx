@@ -17,19 +17,19 @@ const type = async (email: string, password: string) => {
 const switchToRegister = () => userEvent.click(screen.getByRole("button", { name: /switch to register/i }));
 
 describe("LoginPage login", () => {
-  it("logs in, stores the token, notifies the app and goes home", async () => {
-    vi.mocked(api.post).mockResolvedValue({ data: { token: "abc123" } } as never);
+  it("logs in through the session cookie, notifies the app and goes home", async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as never);
     const onAuth = setup();
     await type("a@b.com", "secret1");
     await userEvent.click(screen.getByRole("button", { name: "Login" }));
     expect(api.post).toHaveBeenCalledWith("/auth/login", { email: "a@b.com", password: "secret1" });
-    expect(localStorage.getItem("token")).toBe("abc123");
+    expect(localStorage.getItem("token")).toBeNull();
     expect(onAuth).toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent(/^\/$/);
   });
 
   it("returns to the page the visitor came from", async () => {
-    vi.mocked(api.post).mockResolvedValue({ data: { token: "t" } } as never);
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as never);
     setup({ from: "/cart" });
     await type("a@b.com", "secret1");
     await userEvent.click(screen.getByRole("button", { name: "Login" }));
@@ -63,7 +63,7 @@ describe("LoginPage login", () => {
 
 describe("LoginPage register", () => {
   it("registers a buyer by default", async () => {
-    vi.mocked(api.post).mockResolvedValue({ data: { token: "t" } } as never);
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as never);
     setup();
     await switchToRegister();
     await type("new@b.com", "secret1");
@@ -73,7 +73,7 @@ describe("LoginPage register", () => {
   });
 
   it("registers a seller with a store name and opens the Seller Hub", async () => {
-    vi.mocked(api.post).mockResolvedValue({ data: { token: "t" } } as never);
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as never);
     setup();
     await switchToRegister();
     await userEvent.click(screen.getByLabelText(/i want to sell/i));

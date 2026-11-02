@@ -43,8 +43,7 @@ export default function LoginPage({ onAuth }: { onAuth?: () => void | Promise<vo
         : accountType === "SELLER"
           ? { email, password, accountType, storeName: storeName.trim() }
           : { email, password, accountType };
-      const r = await api.post<{ token: string }>(`/auth/${mode}`, body);
-      localStorage.setItem("token", r.data.token);
+      await api.post(`/auth/${mode}`, body);
       await (onAuth ?? refresh)();
       const fallback = mode === "register" && accountType === "SELLER" ? "/seller" : "/";
       router.replace(hint.from ?? fallback);

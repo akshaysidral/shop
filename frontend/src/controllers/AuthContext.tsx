@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
-import { api, refreshAccessToken } from "../api";
+import { api } from "../api";
 import type { Me } from "../models/api";
 
 export type AuthValue = {
@@ -18,24 +18,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!localStorage.getItem("token")) {
-      try {
-        if (!await refreshAccessToken()) {
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-      } catch {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-    }
+    localStorage.removeItem("token");
     try {
       const r = await api.get<Me>("/me");
       setUser(r.data);
     } catch {
-      localStorage.removeItem("token");
       setUser(null);
     } finally {
       setLoading(false);
@@ -57,9 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await api.post("/auth/logout");
       } catch (error) {
-        console.error("Could not revoke refresh token during logout", error);
+        console.error("Could not end the server session during logout", error);
       } finally {
-        localStorage.removeItem("token");
         setUser(null);
       }
     },

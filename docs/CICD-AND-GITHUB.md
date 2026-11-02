@@ -36,7 +36,7 @@ The first three need no secrets: push and watch the **Actions** tab.
 
 ## 3. Enable deployment (optional)
 1. **Server:** install Docker, `mkdir /opt/shop`, copy `.env.example` to `/opt/shop/.env` and fill it in
-   (DB password, JWT secret, CORS origin, first admin).
+   (DB password, secure session-cookie setting, CORS origin, first admin).
 2. **Repo > Settings > Secrets and variables > Actions**
    - Secrets: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`, `GHCR_PAT` (a token with `read:packages`)
    - Variables: `PROD_API_URL` (for example `http://YOUR_SERVER_IP:8080/api`), `DEPLOY_ENABLED` = `true`

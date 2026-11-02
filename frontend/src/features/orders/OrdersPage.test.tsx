@@ -19,7 +19,6 @@ describe("OrdersPage", () => {
   });
 
   it("lists orders with each line, its seller and its own status", async () => {
-    localStorage.setItem("token", "t");
     routeGet({ "/orders": [ORDER] });
     renderApp(<OrdersPage />, { permissions: [] });
     expect(await screen.findByText("Order #7")).toBeInTheDocument();
@@ -31,7 +30,6 @@ describe("OrdersPage", () => {
   });
 
   it("shows line totals and the order total", async () => {
-    localStorage.setItem("token", "t");
     routeGet({ "/orders": [ORDER] });
     renderApp(<OrdersPage />, { permissions: [] });
     await screen.findByText("Order #7");
@@ -40,7 +38,6 @@ describe("OrdersPage", () => {
   });
 
   it("invites the buyer to shop when there are no orders", async () => {
-    localStorage.setItem("token", "t");
     routeGet({ "/orders": [] });
     renderApp(<OrdersPage />, { permissions: [] });
     expect(await screen.findByText(/no orders yet/i)).toBeInTheDocument();
@@ -48,7 +45,6 @@ describe("OrdersPage", () => {
   });
 
   it("shows an error when the orders cannot be loaded", async () => {
-    localStorage.setItem("token", "t");
     routeGet({ "/orders": new Error("boom") });
     renderApp(<OrdersPage />, { permissions: [] });
     expect(await screen.findByText(/could not load your orders/i)).toBeInTheDocument();

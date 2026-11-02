@@ -5,67 +5,42 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-declare module "axios" {
-  interface InternalAxiosRequestConfig {
-    _retry?: boolean;
-  }
-}
+let csrfToken: string | null = null;
+let csrfRequest: Promise<string> | null = null;
 
-api.interceptors.request.use((cfg) => {
-  const t = localStorage.getItem("token");
-  if (t) cfg.headers.Authorization = `Bearer ${t}`;
-  return cfg;
-});
-
-let refreshInFlight: Promise<string | null> | null = null;
-
-function expireSession() {
-  localStorage.removeItem("token");
-  window.dispatchEvent(new Event("auth:expired"));
-}
-
-export function refreshAccessToken(): Promise<string | null> {
-  if (!refreshInFlight) {
-    refreshInFlight = api.post<{ token: string }>("/auth/refresh")
+function getCsrfToken(): Promise<string> {
+  if (csrfToken) return Promise.resolve(csrfToken);
+  if (!csrfRequest) {
+    csrfRequest = api.get<{ token: string }>("/auth/csrf")
       .then(({ data }) => {
-        localStorage.setItem("token", data.token);
+        csrfToken = data.token;
         return data.token;
       })
-      .catch((error: unknown) => {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          expireSession();
-          return null;
-        }
-        throw error;
-      })
       .finally(() => {
-        refreshInFlight = null;
+        csrfRequest = null;
       });
   }
-  return refreshInFlight;
+  return csrfRequest;
+}
+
+api.interceptors.request.use(async (config) => {
+  const method = config.method?.toLowerCase() ?? "get";
+  if (!["get", "head", "options", "trace"].includes(method)) {
+    config.headers.set("X-XSRF-TOKEN", await getCsrfToken());
+  }
+  return config;
+});
+
+function isAuthRequest(url: string): boolean {
+  return ["/auth/login", "/auth/register", "/auth/csrf"].some((path) => url.endsWith(path));
 }
 
 api.interceptors.response.use(
   (r) => r,
   async (err: unknown) => {
     if (axios.isAxiosError(err) && err.response?.status === 401) {
-      const request = err.config;
-      const url = request?.url ?? "";
-      const isAuthRequest = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"]
-        .some((path) => url.endsWith(path));
-
-      if (request && !request._retry && !isAuthRequest) {
-        request._retry = true;
-        const token = await refreshAccessToken();
-        if (!token) {
-          return Promise.reject(err);
-        }
-        request.headers.Authorization = `Bearer ${token}`;
-        return api.request(request);
-      }
-
-      if (!isAuthRequest) {
-        expireSession();
+      if (!isAuthRequest(err.config?.url ?? "")) {
+        window.dispatchEvent(new Event("auth:expired"));
       }
     }
     return Promise.reject(err);

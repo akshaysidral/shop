@@ -8,11 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
+@SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test") @Import(MockCsrfConfig.class)
 class ShopFlowTest {
   @Autowired MockMvc mvc;
 
@@ -26,9 +27,9 @@ class ShopFlowTest {
 
   @Test void registerThenListOrders() throws Exception {
     String body = "{\"email\":\"a@b.com\",\"password\":\"secret1\"}";
-    String res = mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
-        .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
-    String token = res.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
-    mvc.perform(get("/api/orders").header("Authorization", "Bearer " + token)).andExpect(status().isOk());
+    var response = mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isCreated()).andReturn().getResponse();
+    mvc.perform(get("/api/orders").cookie(TestSessions.sessionCookie(TestSessions.sessionId(response))))
+        .andExpect(status().isOk());
   }
 }

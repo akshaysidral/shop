@@ -7,8 +7,8 @@ import { apiError, makeProduct, renderApp, SeedCart } from "../../testUtils";
 const mouse = makeProduct({ id: 1, name: "Mouse", price: 800, finalPrice: 800, stock: 3 });
 const lamp = makeProduct({ id: 2, name: "Lamp", price: 1000, finalPrice: 800, discountPercent: 20, stock: 5, sellerName: "Zed" });
 
-async function cartWith(items: [typeof mouse, number][] = [[mouse, 2], [lamp, 1]]) {
-  const utils = renderApp(<><SeedCart items={items} /><CartPage /></>);
+async function cartWith(items: [typeof mouse, number][] = [[mouse, 2], [lamp, 1]], permissions: string[] | null = null) {
+  const utils = renderApp(<><SeedCart items={items} /><CartPage /></>, { permissions });
   await userEvent.click(screen.getByRole("button", { name: "seed cart" }));
   return utils;
 }
@@ -74,9 +74,8 @@ describe("CartPage", () => {
   });
 
   it("places the order for a logged-in buyer and opens My orders", async () => {
-    localStorage.setItem("token", "t");
     vi.mocked(api.post).mockResolvedValue({ data: { id: 1 } } as never);
-    await cartWith();
+    await cartWith(undefined, []);
     await userEvent.click(screen.getByRole("button", { name: "Place order" }));
     expect(api.post).toHaveBeenCalledWith("/orders", { items: [{ productId: 1, quantity: 2 }, { productId: 2, quantity: 1 }] });
     expect(await screen.findByText("Your cart is empty")).toBeInTheDocument();
@@ -84,9 +83,8 @@ describe("CartPage", () => {
   });
 
   it("shows why the order failed and keeps the cart", async () => {
-    localStorage.setItem("token", "t");
     vi.mocked(api.post).mockRejectedValue(apiError("Insufficient stock for Mouse"));
-    await cartWith();
+    await cartWith(undefined, []);
     await userEvent.click(screen.getByRole("button", { name: "Place order" }));
     expect(await screen.findByText("Insufficient stock for Mouse")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Mouse" })).toBeInTheDocument();

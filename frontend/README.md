@@ -112,11 +112,11 @@ Notes:
 - Responsive `display: { xs: "none" }` is evaluated by jsdom as hidden; do not hide interactive elements that tests need.
 
 ## How auth and permissions work in the UI
-1. Login or register stores the short-lived access JWT in `localStorage`; the server sets the rotating refresh token in a `Secure`/`HttpOnly` cookie.
-2. Axios sends credentialed requests and the access JWT. On a 401 it refreshes once and retries the failed request.
-3. On page load, `AuthContext` restores the session from the refresh cookie and calls `GET /api/me`; `can("PRODUCTS_CREATE")` drives menus and links.
+1. Login or register creates a server-side session. The browser receives only the `HttpOnly` `SHOP_SESSION` cookie; no access token is stored in browser storage.
+2. Axios sends credentialed requests with a CSRF header for state-changing requests.
+3. On page load, `AuthContext` calls `GET /api/me` to restore the current user from the session; `can("PRODUCTS_CREATE")` drives menus and links.
 4. `RequirePermission` protects `/seller` and `/admin` (guests go to login, others see a notice).
-5. Logout revokes the refresh-token family and clears the cookie and access token.
+5. Logout invalidates the server-side session.
 
 ## Adding a page
 1. Add an App Router route at `app/<route>/page.tsx`. Keep it as a thin adapter that imports the feature screen.

@@ -1,18 +1,11 @@
 {
   "info": {
     "name": "Bazario API (marketplace, RBAC)",
-    "description": "Seller commission: each seller pays a percentage of sales (5% standard, 3% preferred). Run in order: 01 Auth > 02 Roles > 03 Users > 04 Products > 05 Orders > 06 Categories > 07 Seller Hub > 08 Festival offers > 09 Admin > 10 Permission checks.\nCollection variables hold tokens and ids; the test scripts fill them in automatically.",
+    "description": "Seller commission: each seller pays a percentage of sales (5% standard, 3% preferred). Run in order: 01 Auth > 02 Roles > 03 Users > 04 Products > 05 Orders > 06 Categories > 07 Seller Hub > 08 Festival offers > 09 Admin > 10 Permission checks.\nCollection variables hold opaque server-session IDs and resource IDs; run Get CSRF token first.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{token}}",
-        "type": "string"
-      }
-    ]
+    "type": "noauth"
   },
   "item": [
     {
@@ -58,7 +51,41 @@
       "description": "",
       "item": [
         {
-          "name": "Login as ADMIN (saves {{token}})",
+          "name": "Get CSRF token (run first)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.collectionVariables.set(\"csrfToken\", pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/csrf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "csrf"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Run before login and all other state-changing requests. Stores the CSRF token for X-XSRF-TOKEN."
+          }
+        },
+        {
+          "name": "Login as ADMIN (saves {{adminSession}})",
           "event": [
             {
               "listen": "test",
@@ -66,7 +93,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 200\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });",
-                  "pm.collectionVariables.set(\"token\", pm.response.json().token);"
+                  "pm.collectionVariables.set(\"adminSession\", pm.response.cookies.get(\"SHOP_SESSION\").value);"
                 ]
               }
             }
@@ -77,6 +104,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -93,7 +128,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Run this FIRST. Saves the admin JWT into the collection variable `token`.",
+            "description": "Run this FIRST. Saves the admin session ID into the collection variable `adminSession`.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
@@ -106,7 +141,7 @@
           }
         },
         {
-          "name": "Register customer (saves {{customerToken}})",
+          "name": "Register customer (saves {{customerSession}})",
           "event": [
             {
               "listen": "test",
@@ -114,7 +149,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 201 or 409\", function () { pm.expect(pm.response.code).to.be.oneOf([201, 409]); });",
-                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"customerToken\", pm.response.json().token); }"
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"customerSession\", pm.response.cookies.get(\"SHOP_SESSION\").value); }"
                 ]
               }
             }
@@ -125,6 +160,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -154,7 +197,7 @@
           }
         },
         {
-          "name": "Login as customer (saves {{customerToken}})",
+          "name": "Login as customer (saves {{customerSession}})",
           "event": [
             {
               "listen": "test",
@@ -162,7 +205,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 200\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });",
-                  "pm.collectionVariables.set(\"customerToken\", pm.response.json().token);"
+                  "pm.collectionVariables.set(\"customerSession\", pm.response.cookies.get(\"SHOP_SESSION\").value);"
                 ]
               }
             }
@@ -173,6 +216,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -202,7 +253,7 @@
           }
         },
         {
-          "name": "Register SELLER (saves {{sellerToken}})",
+          "name": "Register SELLER (saves {{sellerSession}})",
           "event": [
             {
               "listen": "test",
@@ -210,7 +261,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 201 or 409\", function () { pm.expect(pm.response.code).to.be.oneOf([201, 409]); });",
-                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"sellerToken\", pm.response.json().token); }"
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"sellerSession\", pm.response.cookies.get(\"SHOP_SESSION\").value); }"
                 ]
               }
             }
@@ -221,6 +272,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -250,7 +309,7 @@
           }
         },
         {
-          "name": "Login as seller (saves {{sellerToken}})",
+          "name": "Login as seller (saves {{sellerSession}})",
           "event": [
             {
               "listen": "test",
@@ -258,7 +317,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 200\", function () { pm.expect(pm.response.code).to.be.oneOf([200]); });",
-                  "pm.collectionVariables.set(\"sellerToken\", pm.response.json().token);"
+                  "pm.collectionVariables.set(\"sellerSession\", pm.response.cookies.get(\"SHOP_SESSION\").value);"
                 ]
               }
             }
@@ -269,6 +328,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -313,7 +380,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/me",
               "host": [
@@ -325,14 +397,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -353,7 +418,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/me",
               "host": [
@@ -365,14 +435,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Any logged-in user. Shows roles and effective permissions."
           }
@@ -392,7 +455,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/me",
               "host": [
@@ -404,14 +472,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -437,7 +498,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/permissions",
               "host": [
@@ -449,14 +515,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ROLES_READ."
           }
@@ -476,7 +535,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/roles",
               "host": [
@@ -488,14 +552,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ROLES_READ."
           }
@@ -529,6 +586,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -542,14 +607,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ROLES_CREATE. Name must be UPPER_SNAKE_CASE. You can only grant permissions you hold.",
             "body": {
@@ -578,7 +636,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/roles/{{roleId}}",
               "host": [
@@ -591,14 +654,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ROLES_READ."
           }
@@ -622,6 +678,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -636,14 +700,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ROLES_UPDATE. ADMIN cannot be modified; built-in roles cannot be renamed.",
             "body": {
@@ -672,7 +729,16 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/roles/{{roleId}}",
               "host": [
@@ -685,14 +751,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ROLES_DELETE. 409 while the role is still assigned to a user (unassign first) or if built-in."
           }
@@ -720,7 +779,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/users",
               "host": [
@@ -732,14 +796,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs USERS_READ. Register the customer first."
           }
@@ -759,7 +816,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/users/{{userId}}",
               "host": [
@@ -772,14 +834,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs USERS_READ."
           }
@@ -803,6 +858,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -818,14 +881,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs USERS_UPDATE. Replaces the user's roles. Effective immediately, no re-login. Create a role first (folder 02).",
             "body": {
@@ -858,6 +914,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -873,14 +937,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs USERS_UPDATE. The last ADMIN can never be demoted (409).",
             "body": {
@@ -909,7 +966,16 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/users/{{userId}}",
               "host": [
@@ -922,14 +988,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs USERS_DELETE. 409 if the user has orders, is yourself, or is the last ADMIN."
           }
@@ -1063,6 +1122,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1076,14 +1143,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs PRODUCTS_CREATE.",
             "body": {
@@ -1116,6 +1176,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1130,14 +1198,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs PRODUCTS_UPDATE.",
             "body": {
@@ -1166,7 +1227,16 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/products/{{productId}}",
               "host": [
@@ -1179,14 +1249,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs PRODUCTS_DELETE."
           }
@@ -1217,6 +1280,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1230,14 +1301,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Any logged-in user. Run 'Create product' first so {{productId}} is valid. 409 = not enough stock.",
             "body": {
@@ -1266,7 +1330,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/orders",
               "host": [
@@ -1278,14 +1347,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Own orders only."
           }
@@ -1305,7 +1367,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/orders/all",
               "host": [
@@ -1318,14 +1385,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ORDERS_READ_ALL."
           }
@@ -1349,6 +1409,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1364,14 +1432,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ORDERS_UPDATE. Statuses: PLACED, SHIPPED, DELIVERED, CANCELLED.",
             "body": {
@@ -1404,6 +1465,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1419,14 +1488,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Cancelling puts the stock back. A cancelled order cannot be reopened (409).",
             "body": {
@@ -1455,7 +1517,16 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/orders/{{orderId}}",
               "host": [
@@ -1468,14 +1539,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs ORDERS_DELETE."
           }
@@ -1547,6 +1611,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1560,14 +1632,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs CATEGORIES_MANAGE.",
             "body": {
@@ -1600,6 +1665,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1614,14 +1687,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs CATEGORIES_MANAGE.",
             "body": {
@@ -1688,7 +1754,16 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
               "host": [
@@ -1701,14 +1776,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "409 while products still use it."
           }
@@ -1734,7 +1802,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/seller/products",
               "host": [
@@ -1747,14 +1820,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs PRODUCTS_CREATE."
           }
@@ -1779,6 +1845,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1792,14 +1866,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "The product is owned by the caller. Run 06 > Create category first (or remove categoryId).",
             "body": {
@@ -1832,6 +1899,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1846,14 +1921,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Sellers can only change their own products (403 otherwise). Admin with PRODUCTS_MANAGE_ALL can change any.",
             "body": {
@@ -1886,6 +1954,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1900,16 +1976,9 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
-            "description": "A buyer (no seller permissions) is refused. Use a second seller token to see the ownership rule.",
+            "description": "A buyer (no seller permissions) is refused. Use a second seller session to see the ownership rule.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Hijack\",\n  \"description\": \"x\",\n  \"price\": 1,\n  \"stock\": 1\n}",
@@ -1942,6 +2011,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -1955,14 +2032,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Buyers pay the offer price. Sellers cannot buy their own products (409).",
             "body": {
@@ -1991,7 +2061,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/seller/orders",
               "host": [
@@ -2004,14 +2079,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs SELLER_ORDERS_READ. Only lines for this seller's products; buyer email is masked."
           }
@@ -2032,7 +2100,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/seller/earnings",
               "host": [
@@ -2045,14 +2118,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs SELLER_ORDERS_READ. grossSales, commission (kept by Bazario), netEarnings, payable (delivered) and pending."
           }
@@ -2076,6 +2142,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2094,14 +2168,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs SELLER_ORDERS_UPDATE and ownership of the line.",
             "body": {
@@ -2134,6 +2201,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2152,14 +2227,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "",
             "body": {
@@ -2188,7 +2256,16 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/products/{{sellerProductId}}",
               "host": [
@@ -2201,14 +2278,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -2249,6 +2319,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2262,14 +2340,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs OFFERS_MANAGE. Choose festival, discount (1-90), dates and products (or appliesToAll). Run 07 > Create product first.",
             "body": {
@@ -2365,7 +2436,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/offers",
               "host": [
@@ -2377,14 +2453,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Sellers see their own offers; admin (OFFERS_MANAGE_ALL) sees all."
           }
@@ -2408,6 +2477,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2422,14 +2499,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "",
             "body": {
@@ -2458,7 +2528,16 @@
           ],
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/offers/{{offerId}}",
               "host": [
@@ -2471,14 +2550,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -2504,7 +2576,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/admin/stats",
               "host": [
@@ -2517,14 +2594,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs STATS_READ."
           }
@@ -2544,7 +2614,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/offers",
               "host": [
@@ -2556,14 +2631,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "OFFERS_MANAGE_ALL sees every seller's offers."
           }
@@ -2585,7 +2653,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/admin/sellers",
               "host": [
@@ -2598,14 +2671,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Needs COMMISSION_MANAGE. Every seller with their rate, units sold, gross sales and the commission earned. Register the seller first (01 Auth)."
           }
@@ -2630,6 +2696,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2646,14 +2720,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Applies to FUTURE orders only. Allowed range 0 to 30.",
             "body": {
@@ -2686,6 +2753,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2702,14 +2777,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "",
             "body": {
@@ -2742,6 +2810,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{adminSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2758,14 +2834,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "",
             "body": {
@@ -2794,7 +2863,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/admin/stats",
               "host": [
@@ -2807,14 +2881,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -2844,6 +2911,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -2857,14 +2932,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "",
             "body": {
@@ -2893,7 +2961,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/roles",
               "host": [
@@ -2905,14 +2978,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -2932,7 +2998,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/users",
               "host": [
@@ -2944,14 +3015,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -2971,7 +3035,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/orders/all",
               "host": [
@@ -2984,14 +3053,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
@@ -3015,6 +3077,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{sellerSession}}; XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -3031,14 +3101,7 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{sellerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": "Only COMMISSION_MANAGE (admin) can set rates, never the seller.",
             "body": {
@@ -3067,7 +3130,12 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "SHOP_SESSION={{customerSession}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/seller/earnings",
               "host": [
@@ -3080,20 +3148,13 @@
               ]
             },
             "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{customerToken}}",
-                  "type": "string"
-                }
-              ]
+              "type": "noauth"
             },
             "description": ""
           }
         },
         {
-          "name": "No token creates product -> 401",
+          "name": "No session creates product -> 401",
           "event": [
             {
               "listen": "test",
@@ -3111,6 +3172,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "XSRF-TOKEN={{csrfToken}}"
               }
             ],
             "url": {
@@ -3175,15 +3244,15 @@
       "value": "My Postman Store"
     },
     {
-      "key": "token",
+      "key": "adminSession",
       "value": ""
     },
     {
-      "key": "customerToken",
+      "key": "customerSession",
       "value": ""
     },
     {
-      "key": "sellerToken",
+      "key": "sellerSession",
       "value": ""
     },
     {
@@ -3241,6 +3310,11 @@
     {
       "key": "orderId",
       "value": ""
+    },
+    {
+      "key": "csrfToken",
+      "value": "",
+      "type": "string"
     }
   ]
 }

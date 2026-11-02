@@ -2,13 +2,13 @@
 
 **Bazario: Shop. Sell. Celebrate.** Buyers browse by category and buy; sellers list products, run their own festival
 offers, ship their own orders and pay the marketplace a small **commission per sale (5% standard, 3% preferred)**;
-admins run the marketplace. React + Material UI on a Spring Boot REST API with JWT login, role- and permission-based
+admins run the marketplace. React + Material UI on a Spring Boot REST API with server-side session login, role- and permission-based
 access control, PostgreSQL, Docker and a GitHub Actions CI/CD pipeline.
 
 | Layer | Tech |
 |---|---|
 | Frontend | React, TypeScript, Next.js App Router, **Material UI (MUI) 7**, Axios, Vitest + Testing Library, ESLint |
-| Backend | Java 21, Spring Boot 3.3, Spring Security (JWT), Spring Data JPA, PostgreSQL, JUnit 5 + Mockito |
+| Backend | Java 21, Spring Boot 3.3, Spring Security sessions, Spring Session JDBC, Spring Data JPA, PostgreSQL, JUnit 5 + Mockito |
 | DevOps | Docker, Docker Compose, GitHub Actions, GitHub Container Registry |
 
 ## Who can do what

@@ -37,4 +37,6 @@ The demo sellers also work: `seller@bazario.local` / `Seller@12345` (5%) and `se
 - Folder 10 expects the customer to have no extra roles.
 
 ## Manual authentication
-Login at `POST /api/auth/login`, copy the token, then choose **Authorization > Bearer Token** and paste only the token.
+Use the Postman cookie jar for the API host. Request `GET /api/auth/csrf` to obtain a CSRF token, then send it in
+`X-XSRF-TOKEN` on every state-changing request. Login at `POST /api/auth/login`; Postman stores the `HttpOnly`
+`SHOP_SESSION` cookie automatically. No JWT or bearer token is returned.
