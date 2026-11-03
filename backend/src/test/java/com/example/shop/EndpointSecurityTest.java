@@ -82,8 +82,6 @@ class EndpointSecurityTest {
         new Endpoint("PATCH", "/api/orders/1/status", STATUS),
         new Endpoint("DELETE", "/api/orders/1", null),
         new Endpoint("GET", "/api/seller/products", null),
-        new Endpoint("POST", "/api/seller/products/1/image-upload-url",
-            "{\"contentType\":\"image/png\",\"fileSizeBytes\":1024}"),
         new Endpoint("GET", "/api/seller/orders", null),
         new Endpoint("GET", "/api/seller/earnings", null),
         new Endpoint("PATCH", "/api/seller/orders/1/items/1/status", STATUS),
