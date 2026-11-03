@@ -15,34 +15,72 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@EnableMethodSecurity // enables @PreAuthorize("hasAuthority('...')") on controller methods
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-  private final JwtFilter jwtFilter;
+  private final CurrentUserFilter currentUserFilter;
+
   @Value("${app.cors-origin}")
   private String corsOrigin;
 
+  @Value("${server.servlet.session.cookie.secure:false}")
+  private boolean secureCookies;
+
+  @Value("${server.servlet.session.cookie.same-site:Lax}")
+  private String sameSite;
+
   @Bean
-  SecurityFilterChain chain(HttpSecurity http) throws Exception {
+  SecurityFilterChain chain(HttpSecurity http, SecurityContextRepository securityContextRepository,
+      CsrfTokenRepository csrfTokenRepository) throws Exception {
     return http
-        .csrf(c -> c.disable())
+        .csrf(csrf -> csrf
+            .csrfTokenRepository(csrfTokenRepository)
+            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
         .cors(Customizer.withDefaults())
-        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .securityContext(context -> context.securityContextRepository(securityContextRepository))
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+            .sessionFixation(fixation -> fixation.changeSessionId()))
         .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
         .authorizeHttpRequests(a -> a
             .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/offers/active",
-                "/actuator/health")
+                "/api/auth/csrf", "/actuator/health")
             .permitAll()
             .requestMatchers("/api/auth/**", "/error").permitAll()
-            .anyRequest().authenticated()) // fine-grained checks live in @PreAuthorize
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .anyRequest().authenticated())
+        .addFilterAfter(currentUserFilter, SecurityContextHolderFilter.class)
         .build();
+  }
+
+  @Bean
+  SecurityContextRepository securityContextRepository() {
+    return new HttpSessionSecurityContextRepository();
+  }
+
+  @Bean
+  SessionAuthenticationStrategy sessionAuthenticationStrategy() {
+    return new ChangeSessionIdAuthenticationStrategy();
+  }
+
+  @Bean
+  CsrfTokenRepository csrfTokenRepository() {
+    CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    repository.setCookiePath("/");
+    repository.setCookieCustomizer(cookie -> cookie.secure(secureCookies).sameSite(sameSite));
+    return repository;
   }
 
   @Bean
@@ -52,13 +90,13 @@ public class SecurityConfig {
 
   @Bean
   CorsConfigurationSource corsConfigurationSource() {
-    var c = new CorsConfiguration();
-    c.setAllowedOrigins(List.of(corsOrigin.split(",")));
-    c.setAllowedMethods(List.of("*"));
-    c.setAllowedHeaders(List.of("*"));
-    c.setAllowCredentials(true);
-    var s = new UrlBasedCorsConfigurationSource();
-    s.registerCorsConfiguration("/**", c);
-    return s;
+    var configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of(corsOrigin.split(",")));
+    configuration.setAllowedMethods(List.of("*"));
+    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowCredentials(true);
+    var source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 }

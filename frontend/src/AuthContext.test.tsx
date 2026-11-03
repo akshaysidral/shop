@@ -1,7 +1,7 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "./AuthContext";
-import { api, refreshAccessToken } from "./api";
+import { api } from "./api";
 import { makeUser } from "./testUtils";
 
 function Probe() {
@@ -20,17 +20,15 @@ function Probe() {
 const renderProvider = () => render(<AuthProvider><Probe /></AuthProvider>);
 
 describe("AuthProvider", () => {
-  it("is logged out and not loading when there is no token", async () => {
-    vi.mocked(refreshAccessToken).mockResolvedValue(null);
+  it("is logged out when the session cookie is absent", async () => {
+    vi.mocked(api.get).mockRejectedValue(new Error("401"));
     renderProvider();
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("false"));
     expect(screen.getByTestId("email")).toHaveTextContent("none");
-    expect(api.get).not.toHaveBeenCalled();
-    expect(refreshAccessToken).toHaveBeenCalledOnce();
+    expect(api.get).toHaveBeenCalledWith("/me");
   });
 
-  it("loads the user from /me when a token exists", async () => {
-    localStorage.setItem("token", "t");
+  it("loads the user and permissions from /me", async () => {
     vi.mocked(api.get).mockResolvedValue({ data: makeUser({ email: "sam@shop.com", permissions: ["PRODUCTS_CREATE"] }) } as never);
     renderProvider();
     expect(await screen.findByText("sam@shop.com")).toBeInTheDocument();
@@ -39,14 +37,13 @@ describe("AuthProvider", () => {
   });
 
   it("answers can() false for permissions the user lacks", async () => {
-    localStorage.setItem("token", "t");
     vi.mocked(api.get).mockResolvedValue({ data: makeUser({ permissions: [] }) } as never);
     renderProvider();
     await screen.findByText("alice@shop.com");
     expect(screen.getByTestId("can")).toHaveTextContent("false");
   });
 
-  it("forgets a token that /me rejects", async () => {
+  it("clears any legacy localStorage token when /me rejects", async () => {
     localStorage.setItem("token", "stale");
     vi.mocked(api.get).mockRejectedValue(new Error("401"));
     renderProvider();
@@ -56,7 +53,6 @@ describe("AuthProvider", () => {
   });
 
   it("logs out", async () => {
-    localStorage.setItem("token", "t");
     vi.mocked(api.get).mockResolvedValue({ data: makeUser() } as never);
     renderProvider();
     await screen.findByText("alice@shop.com");
@@ -67,7 +63,6 @@ describe("AuthProvider", () => {
   });
 
   it("drops the user when the API reports an expired token", async () => {
-    localStorage.setItem("token", "t");
     vi.mocked(api.get).mockResolvedValue({ data: makeUser() } as never);
     renderProvider();
     await screen.findByText("alice@shop.com");
@@ -76,9 +71,9 @@ describe("AuthProvider", () => {
   });
 
   it("refresh() reloads the user after a login", async () => {
+    vi.mocked(api.get).mockRejectedValueOnce(new Error("401"));
     renderProvider();
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("false"));
-    localStorage.setItem("token", "new");
     vi.mocked(api.get).mockResolvedValue({ data: makeUser({ email: "new@shop.com" }) } as never);
     await userEvent.click(screen.getByRole("button", { name: "refresh" }));
     expect(await screen.findByText("new@shop.com")).toBeInTheDocument();

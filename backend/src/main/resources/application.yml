@@ -1,4 +1,8 @@
 spring:
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/shop}
     username: ${DB_USER:postgres}
@@ -28,16 +32,22 @@ app:
     store-name: ${APP_SELLER2_STORE:Preferred Picks}
     commission-percent: 3 # preferred seller
   cors-origin: ${APP_CORS_ORIGIN:http://localhost:3000,http://localhost:3001}
-  jwt:
-    secret: ${APP_JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
-    expiration-ms: ${APP_JWT_EXPIRATION_MS:900000}
-  auth:
-    refresh-token:
-      expiration-ms: ${APP_REFRESH_TOKEN_EXPIRATION_MS:604800000}
-      cookie:
-        secure: ${APP_REFRESH_COOKIE_SECURE:false}
-        same-site: ${APP_REFRESH_COOKIE_SAME_SITE:Lax}
+  storage:
+    s3:
+      enabled: ${APP_S3_ENABLED:false}
+      bucket: ${APP_S3_BUCKET:bazario-app}
+      region: ${APP_S3_REGION:ap-south-1}
+      upload-url-expiration-seconds: ${APP_S3_UPLOAD_URL_EXPIRATION_SECONDS:300}
 server:
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: SHOP_SESSION
+        http-only: true
+        secure: ${APP_SESSION_COOKIE_SECURE:false}
+        same-site: ${APP_SESSION_COOKIE_SAME_SITE:Lax}
+        path: /
   error:
     include-message: always
 management:

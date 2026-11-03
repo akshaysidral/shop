@@ -1,6 +1,6 @@
 # Backend (Spring Boot API)
 
-Java 21 · Spring Boot 3.3 · Spring Security + JWT · Spring Data JPA · PostgreSQL · JUnit 5 / Mockito
+Java 21 · Spring Boot 3.3 · Spring Security sessions · Spring Session JDBC · Spring Data JPA · PostgreSQL · JUnit 5 / Mockito
 
 ## Run
 ```bash
@@ -25,11 +25,9 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 | Variable | Default | Purpose |
 |---|---|---|
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | local Postgres, `shop` / `shop` | database |
-| `APP_JWT_SECRET` | dev-only string | JWT signing key, **32+ characters, change in production** |
-| `APP_JWT_EXPIRATION_MS` | `900000` (15 minutes) | access-token lifetime |
-| `APP_REFRESH_TOKEN_EXPIRATION_MS` | `604800000` (7 days) | refresh-token lifetime |
-| `APP_REFRESH_COOKIE_SECURE` | `false` for local HTTP | set `true` when served over HTTPS |
-| `APP_REFRESH_COOKIE_SAME_SITE` | `Lax` | set `None` with `Secure=true` only when frontend and API are cross-site |
+| `APP_SESSION_COOKIE_SECURE` | `false` for local HTTP | set `true` when served over HTTPS |
+| `APP_SESSION_COOKIE_SAME_SITE` | `Lax` | set `None` with `Secure=true` only when the frontend and API are cross-site |
+| `server.servlet.session.timeout` | `30m` | server-side session lifetime |
 | `APP_CORS_ORIGIN` | `http://localhost:3000,http://localhost:3001` | allowed browser origin(s) |
 | `APP_COMMISSION_DEFAULT` | `5` | commission percent given to newly registered sellers |
 | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` | `admin@shop.local` / `Admin@12345` | first admin (blank email = none) |
@@ -37,12 +35,11 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 | `APP_SELLER2_EMAIL`, `APP_SELLER2_PASSWORD`, `APP_SELLER2_STORE` | `seller2@bazario.local` / `Seller2@12345` / `Preferred Picks` | demo seller at 3% (blank = none) |
 
 ## Authentication and authorisation
-- `POST /api/auth/register` (BUYER by default, or SELLER with a `storeName`) and `POST /api/auth/login` return a short-lived access JWT and set a rotating refresh token in an `HttpOnly` cookie.
-- `POST /api/auth/refresh` accepts the refresh cookie, rotates it, and returns a new access JWT. Reusing a rotated token revokes its token family.
-- `POST /api/auth/logout` revokes the refresh-token family and clears the cookie. Refresh tokens are random, stored as SHA-256 hashes, and scoped to `/api/auth`.
-- Browser clients must use credentialed requests. Configure exact `APP_CORS_ORIGIN` values. For cross-site frontend/API hosting, set `APP_REFRESH_COOKIE_SECURE=true` and `APP_REFRESH_COOKIE_SAME_SITE=None`; HTTPS is required.
-- Send `Authorization: Bearer <token>`. **Permissions are loaded from the database on every request**, so role changes
-  apply at once. Controllers use `@PreAuthorize("hasAuthority('...')")`; ownership rules (own products, offers, order
+- `POST /api/auth/register` (BUYER by default, or SELLER with a `storeName`) and `POST /api/auth/login` create a server-side session. The browser receives only the `HttpOnly` `SHOP_SESSION` cookie; no JWT or identity claims are returned.
+- `GET /api/auth/csrf` provides a CSRF token for the `X-XSRF-TOKEN` header on unsafe requests. Spring Session JDBC stores sessions in the database.
+- `POST /api/auth/logout` invalidates the server-side session.
+- Browser clients must use credentialed requests. Configure exact `APP_CORS_ORIGIN` values and set `APP_SESSION_COOKIE_SECURE=true` when served over HTTPS. For cross-site frontend/API hosting, also set `APP_SESSION_COOKIE_SAME_SITE=None`.
+- **Permissions are loaded from the database on every request**, so role changes apply at once. Controllers use `@PreAuthorize("hasAuthority('...')")`; ownership rules (own products, offers, order
   lines) are checked in the services. See [`../docs/MARKETPLACE.md`](../docs/MARKETPLACE.md).
 
 ## Commission
@@ -142,5 +139,5 @@ Integration tests run on H2 with the `test` profile (admin `root@test.local` / `
 (5%) and `seller2@test.local` (3%)).
 
 ## Production checklist
-Flyway migrations, strong `APP_JWT_SECRET`, real DB credentials, HTTPS with secure refresh cookies, no default admin
+Flyway migrations, real DB credentials, HTTPS with secure session cookies, no default admin
 or seller credentials, admin approval for new sellers, rate limiting on login, payouts.
