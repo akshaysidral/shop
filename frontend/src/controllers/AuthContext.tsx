@@ -1,13 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
-import { api } from "../api";
+import { api, refreshAccessToken } from "../api";
 import type { Me } from "../models/api";
 
 export type AuthValue = {
   user: Me | null;
   loading: boolean;
   refresh: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   can: (permission: string) => boolean;
 };
 
@@ -19,9 +19,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     if (!localStorage.getItem("token")) {
-      setUser(null);
-      setLoading(false);
-      return;
+      try {
+        if (!await refreshAccessToken()) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
     }
     try {
       const r = await api.get<Me>("/me");
@@ -45,7 +53,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     refresh,
-    logout: () => { localStorage.removeItem("token"); setUser(null); },
+    logout: async () => {
+      try {
+        await api.post("/auth/logout");
+      } catch (error) {
+        console.error("Could not revoke refresh token during logout", error);
+      } finally {
+        localStorage.removeItem("token");
+        setUser(null);
+      }
+    },
     can: (p) => !!user?.permissions.includes(p),
   }), [user, loading, refresh]);
 

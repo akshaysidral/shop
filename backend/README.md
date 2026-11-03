@@ -26,6 +26,10 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 |---|---|---|
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | local Postgres, `shop` / `shop` | database |
 | `APP_JWT_SECRET` | dev-only string | JWT signing key, **32+ characters, change in production** |
+| `APP_JWT_EXPIRATION_MS` | `900000` (15 minutes) | access-token lifetime |
+| `APP_REFRESH_TOKEN_EXPIRATION_MS` | `604800000` (7 days) | refresh-token lifetime |
+| `APP_REFRESH_COOKIE_SECURE` | `false` for local HTTP | set `true` when served over HTTPS |
+| `APP_REFRESH_COOKIE_SAME_SITE` | `Lax` | set `None` with `Secure=true` only when frontend and API are cross-site |
 | `APP_CORS_ORIGIN` | `http://localhost:3000,http://localhost:3001` | allowed browser origin(s) |
 | `APP_COMMISSION_DEFAULT` | `5` | commission percent given to newly registered sellers |
 | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` | `admin@shop.local` / `Admin@12345` | first admin (blank email = none) |
@@ -33,7 +37,10 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 | `APP_SELLER2_EMAIL`, `APP_SELLER2_PASSWORD`, `APP_SELLER2_STORE` | `seller2@bazario.local` / `Seller2@12345` / `Preferred Picks` | demo seller at 3% (blank = none) |
 
 ## Authentication and authorisation
-- `POST /api/auth/register` (BUYER by default, or SELLER with a `storeName`) and `POST /api/auth/login` return a JWT.
+- `POST /api/auth/register` (BUYER by default, or SELLER with a `storeName`) and `POST /api/auth/login` return a short-lived access JWT and set a rotating refresh token in an `HttpOnly` cookie.
+- `POST /api/auth/refresh` accepts the refresh cookie, rotates it, and returns a new access JWT. Reusing a rotated token revokes its token family.
+- `POST /api/auth/logout` revokes the refresh-token family and clears the cookie. Refresh tokens are random, stored as SHA-256 hashes, and scoped to `/api/auth`.
+- Browser clients must use credentialed requests. Configure exact `APP_CORS_ORIGIN` values. For cross-site frontend/API hosting, set `APP_REFRESH_COOKIE_SECURE=true` and `APP_REFRESH_COOKIE_SAME_SITE=None`; HTTPS is required.
 - Send `Authorization: Bearer <token>`. **Permissions are loaded from the database on every request**, so role changes
   apply at once. Controllers use `@PreAuthorize("hasAuthority('...')")`; ownership rules (own products, offers, order
   lines) are checked in the services. See [`../docs/MARKETPLACE.md`](../docs/MARKETPLACE.md).
@@ -80,8 +87,10 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 
 ### Request and response shapes (see `web/Dtos.java`)
 ```
-register       {"email","password","accountType":"BUYER|SELLER","storeName":"required for SELLER"}  -> {"token"}
-login          {"email","password"}                                                                  -> {"token"}
+register       {"email","password","accountType":"BUYER|SELLER","storeName":"required for SELLER"}  -> {"token"} + HttpOnly refresh cookie
+login          {"email","password"}                                                                  -> {"token"} + HttpOnly refresh cookie
+refresh        refresh cookie                                                                       -> {"token"} + rotated HttpOnly refresh cookie
+logout         refresh cookie                                                                       -> 204 + cleared cookie
 product req    {"name","description","price":1000,"stock":10,"categoryId":3,"imageUrl":"https://..."}
 product        {"id","name","description","price":1000,"finalPrice":800,"discountPercent":20,"offerName":"Diwali Sale",
                 "stock","imageUrl","categoryId","categoryName","sellerId","sellerName"}
@@ -107,7 +116,7 @@ Errors: `400` invalid body/rules, `401` no or invalid token, `403` missing permi
 |---|---|
 | `model` | `User`, `Role`, `Permission`, `AccountType`, `Category`, `Product`, `Offer`, `Order` (+ `recomputeStatus`), `OrderItem` (commission snapshot), `OrderStatus` |
 | `repo` | Spring Data repositories (products use JPA Specifications) |
-| `security` | `SecurityConfig`, `JwtService`, `JwtFilter`, `AccessGuard`, `CurrentUser` |
+| `security` | `SecurityConfig`, `JwtService`, `JwtFilter`, `AuthTokenService`, `AccessGuard`, `CurrentUser` |
 | `service` | `Commission` (maths), `CommissionService`, `PricingService`, `ProductService`, `OfferService`, `CategoryService`, `OrderService`, `RoleService`, `UserService`, `StatsService` |
 | `web` | REST controllers (`Auth`, `Product`, `Category`, `Offer`, `Order`, `Seller`, `Admin`, `Role`, `User`) and `Dtos` |
 | `DataSeeder` | roles, categories, first admin, two demo sellers (5% / 3%), sample products and a sale |
@@ -122,7 +131,7 @@ Errors: `400` invalid body/rules, `401` no or invalid token, `403` missing permi
 | `ProductServiceTest`, `OfferServiceTest`, `CategoryServiceTest` | unit | create / update / delete rules, ownership, validation, offer status |
 | `RoleServiceTest`, `UserServiceTest`, `StatsServiceTest` | unit | protected roles, escalation guard, last admin, totals |
 | `ModelTest`, `DtosTest`, `AccessGuardTest`, `JwtServiceTest` | unit | entities, DTO mapping and masking, permission guard, tokens |
-| `ShopFlowTest`, `AuthFlowTest` | integration | public vs secured, register, login, validation |
+| `ShopFlowTest`, `AuthFlowTest` | integration | public vs secured, register, login, validation, refresh rotation/reuse, logout revocation |
 | `RbacFlowTest` | integration | role CRUD, grant / revoke on the same token, escalation, protected roles, last admin |
 | `MarketplaceFlowTest` | integration | seller / buyer registration, ownership, categories, search, offers, fulfilment, stats |
 | `CommissionFlowTest` | integration | rates per seller, earnings, snapshot on rate change, cancellations, two sellers in one order, stats |
@@ -133,5 +142,5 @@ Integration tests run on H2 with the `test` profile (admin `root@test.local` / `
 (5%) and `seller2@test.local` (3%)).
 
 ## Production checklist
-Flyway migrations, strong `APP_JWT_SECRET`, real DB credentials, HTTPS, no default admin or seller credentials,
-admin approval for new sellers, rate limiting on login, refresh tokens / `HttpOnly` cookies, payouts.
+Flyway migrations, strong `APP_JWT_SECRET`, real DB credentials, HTTPS with secure refresh cookies, no default admin
+or seller credentials, admin approval for new sellers, rate limiting on login, payouts.

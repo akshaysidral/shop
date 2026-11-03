@@ -1,7 +1,7 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "./AuthContext";
-import { api } from "./api";
+import { api, refreshAccessToken } from "./api";
 import { makeUser } from "./testUtils";
 
 function Probe() {
@@ -21,10 +21,12 @@ const renderProvider = () => render(<AuthProvider><Probe /></AuthProvider>);
 
 describe("AuthProvider", () => {
   it("is logged out and not loading when there is no token", async () => {
+    vi.mocked(refreshAccessToken).mockResolvedValue(null);
     renderProvider();
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("false"));
     expect(screen.getByTestId("email")).toHaveTextContent("none");
     expect(api.get).not.toHaveBeenCalled();
+    expect(refreshAccessToken).toHaveBeenCalledOnce();
   });
 
   it("loads the user from /me when a token exists", async () => {
@@ -61,6 +63,7 @@ describe("AuthProvider", () => {
     await userEvent.click(screen.getByRole("button", { name: "logout" }));
     expect(localStorage.getItem("token")).toBeNull();
     expect(screen.getByTestId("email")).toHaveTextContent("none");
+    expect(api.post).toHaveBeenCalledWith("/auth/logout");
   });
 
   it("drops the user when the API reports an expired token", async () => {
