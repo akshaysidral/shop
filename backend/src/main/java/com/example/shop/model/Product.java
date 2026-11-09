@@ -2,6 +2,8 @@ package com.example.shop.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,4 +31,10 @@ public class Product {
   private Category category;
   @Column(length = 500)
   private String imageUrl;
+
+  @ElementCollection
+  @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+  @OrderColumn(name = "image_position")
+  @Column(name = "image_url", length = 500, nullable = false)
+  private List<String> imageUrls = new ArrayList<>();
 }

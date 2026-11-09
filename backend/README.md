@@ -10,6 +10,17 @@ mvn verify                       # compile + every test (in-memory H2, no databa
 ```
 Requires JDK 21 and Maven (`brew install maven openjdk@21` on macOS).
 
+To run the backend with Maven while using the Compose database and frontend, run from the repository root:
+```bash
+docker compose up -d db frontend
+docker compose stop backend
+cd backend
+APP_S3_ENABLED=true APP_S3_BUCKET=bazario-app APP_S3_REGION=ap-south-1 \
+DB_URL=jdbc:postgresql://localhost:5433/shop DB_USER=shop DB_PASSWORD=shop \
+mvn spring-boot:run
+```
+The Compose database is published only on localhost port 5433 for this workflow, avoiding the default PostgreSQL port in case a local database already uses it. The Compose backend and the Maven backend both use host port 8080, so run only one at a time. Stop Maven with Ctrl-C before starting the Compose backend again.
+
 `mvn verify` also generates the JaCoCo XML report at `target/site/jacoco/jacoco.xml` for SonarCloud. The backend project key is `akshaysidral_shop_backend`, configured in [`sonar-project.properties`](sonar-project.properties) under organization `akshaysidral`. Its analysis scope is backend services and the category-slug domain helper; this quality gate does not require a separate test for every controller or view. CI also runs the frontend SonarCloud project and waits for both quality gates.
 
 ## Database
@@ -33,6 +44,29 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` | `admin@shop.local` / `Admin@12345` | first admin (blank email = none) |
 | `APP_SELLER_EMAIL`, `APP_SELLER_PASSWORD`, `APP_SELLER_STORE` | `seller@bazario.local` / `Seller@12345` / `Bazario Mart` | demo seller at 5% (blank = none) |
 | `APP_SELLER2_EMAIL`, `APP_SELLER2_PASSWORD`, `APP_SELLER2_STORE` | `seller2@bazario.local` / `Seller2@12345` / `Preferred Picks` | demo seller at 3% (blank = none) |
+| `APP_S3_ENABLED` | `false` | enable S3-backed product image uploads and private image reads |
+| `APP_S3_BUCKET` | `bazario-app` | private product-image bucket name |
+| `APP_S3_REGION` | `ap-south-1` | AWS region for the bucket |
+| `APP_S3_UPLOAD_URL_EXPIRATION_SECONDS` | `300` | presigned upload URL lifetime (1-900 seconds) |
+| `APP_S3_READ_URL_EXPIRATION_SECONDS` | `3600` | presigned image read URL lifetime (1-604800 seconds) |
+
+When S3 is enabled, the backend uses the AWS SDK default credentials provider chain (for example, an attached IAM role, environment-provided credentials, or a local AWS profile). Do not place AWS credentials in frontend variables or commit them. The backend identity needs `s3:PutObject` and `s3:GetObject` for `arn:aws:s3:::<APP_S3_BUCKET>/product/*`. Keep S3 Block Public Access enabled. No bucket ARN or IAM role ARN is configured in `application.yml`; only the bucket name and region are needed there.
+
+If the upload endpoint returns `503 Image uploads are not configured`, enable S3 for the backend with `APP_S3_ENABLED=true`, set `APP_S3_BUCKET` and `APP_S3_REGION`, and restart/recreate the backend. In Docker Compose deployments, add these values to the Compose `.env` file; the Compose files pass them through to the backend. The backend must also have valid AWS credentials through the default credentials provider chain.
+
+Configure S3 bucket CORS separately from the application. For local development, allow the exact frontend origin (adjust if using port 3001):
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 300
+  }
+]
+```
+For deployment, add the exact HTTPS frontend origin to `AllowedOrigins`; do not use `*` with credentialed application requests.
 
 ## Authentication and authorisation
 - `POST /api/auth/register` (BUYER by default, or SELLER with a `storeName`) and `POST /api/auth/login` create a server-side session. The browser receives only the `HttpOnly` `SHOP_SESSION` cookie; no JWT or identity claims are returned.
@@ -68,6 +102,7 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 | PUT / DELETE | `/api/offers/{id}` | owner with `OFFERS_MANAGE`, or `OFFERS_MANAGE_ALL` |
 | POST / GET | `/api/orders` | logged in (place / list own orders) |
 | GET | `/api/seller/products` | `PRODUCTS_CREATE` |
+| POST | `/api/seller/products/{productId}/image-upload-url` | `PRODUCTS_CREATE`; product owner (or `PRODUCTS_MANAGE_ALL`); returns a 5-minute presigned PUT URL for JPEG, PNG, or WebP images up to 5 MiB; call once per image, with no image-count limit |
 | GET | `/api/seller/orders` | `SELLER_ORDERS_READ` |
 | GET | `/api/seller/earnings` | `SELLER_ORDERS_READ` |
 | PATCH | `/api/seller/orders/{orderId}/items/{itemId}/status` | `SELLER_ORDERS_UPDATE` and owner of the line (or `ORDERS_UPDATE`) |
@@ -88,9 +123,10 @@ register       {"email","password","accountType":"BUYER|SELLER","storeName":"req
 login          {"email","password"}                                                                  -> {"token"} + HttpOnly refresh cookie
 refresh        refresh cookie                                                                       -> {"token"} + rotated HttpOnly refresh cookie
 logout         refresh cookie                                                                       -> 204 + cleared cookie
-product req    {"name","description","price":1000,"stock":10,"categoryId":3,"imageUrl":"https://..."}
+product req    {"name","description","price":1000,"stock":10,"categoryId":3,"imageUrls":["<object-key-1>","<object-key-2>"]}
 product        {"id","name","description","price":1000,"finalPrice":800,"discountPercent":20,"offerName":"Diwali Sale",
-                "stock","imageUrl","categoryId","categoryName","sellerId","sellerName"}
+                "stock","imageUrl","imageKey","images":[{"url":"<signed-url>","key":"<object-key>"}],
+                "categoryId","categoryName","sellerId","sellerName"}
 category       {"id","name","icon":"phone","productCount"}      request: {"name","icon"}     (icon = a short key)
 offer req      {"name","discountPercent":20,"startsAt":"2026-10-20T00:00:00Z","endsAt":"...","active":true,
                 "appliesToAll":false,"productIds":[7,8]}
@@ -101,7 +137,11 @@ seller line    {"orderId","itemId","createdAt","buyer":"a***@b.com","productId",
                 "commissionPercent":5,"commission":50.00,"earning":950.00}
 earnings       {"commissionPercent","grossSales","commission","netEarnings","payable","pending","unitsSold"}
 seller summary {"id","email","storeName","commissionPercent","unitsSold","grossSales","commission"}
-set commission {"percent":3}          (0 to 30)
+image upload  POST /api/seller/products/{productId}/image-upload-url once per image with {"contentType":"image/png","fileSizeBytes":1024}
+              -> {"objectKey":"product/{productId}_{product-name}/{uuid}.png","uploadUrl","expiresAt","requiredHeaders"}
+              PUT each file to its uploadUrl, then save all objectKeys in imageUrls (imageUrl remains the primary image).
+              Product responses include temporary private-S3 URLs and keys for each image.
+set commission {"percent":3}           (0 to 30)
 user           {"id","email","storeName","commissionPercent","roles":[...],"permissions":[...]}
 stats          {"users","buyers","sellers","products","orders","revenue","commission"}
 ```

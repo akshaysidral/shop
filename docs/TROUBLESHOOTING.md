@@ -18,6 +18,7 @@
 | `403` | The session lacks the required permission, a CSRF token is missing/invalid, or the request origin is not allowed. Check `GET /api/me` and obtain a fresh token from `GET /api/auth/csrf` for unsafe requests. |
 | Empty 401 hiding the real error | `/error` must be permitted in `SecurityConfig` (it is in this project). |
 | Postman sees nothing in the terminal | Spring does not log requests by default. Add `logging.level.org.springframework.security=DEBUG` temporarily. |
+| `503 Image uploads are not configured` | Set `APP_S3_ENABLED=true`, configure `APP_S3_BUCKET` and `APP_S3_REGION`, provide AWS credentials to the backend using the AWS SDK default credentials chain, then restart/recreate the backend. See [`backend/README.md`](../backend/README.md#configuration-environment-variables) for S3 permissions and bucket CORS. |
 
 ## Frontend
 | Symptom | Cause and fix |

@@ -6,6 +6,7 @@ services:
       POSTGRES_DB: shop
       POSTGRES_USER: shop
       POSTGRES_PASSWORD: shop
+    ports: ["127.0.0.1:5433:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -19,6 +20,9 @@ services:
       DB_USER: shop
       DB_PASSWORD: shop
       APP_CORS_ORIGIN: http://localhost
+      APP_S3_ENABLED: ${APP_S3_ENABLED:-true}
+      APP_S3_BUCKET: ${APP_S3_BUCKET:-bazario-app}
+      APP_S3_REGION: ${APP_S3_REGION:-ap-south-1}
     depends_on:
       db: { condition: service_healthy }
     ports: ["8080:8080"]

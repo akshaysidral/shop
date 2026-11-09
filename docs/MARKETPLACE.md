@@ -29,7 +29,7 @@ line's status under My orders. The price paid is saved on the order line. A sell
 
 ## 3. Seller journey (Seller Hub, `/seller`)
 1. Register through **Sell on Bazario** (store name required). New sellers start on the standard commission rate.
-2. **My products:** add, edit, delete (own products only), category and optional image URL.
+2. **My products:** add, edit, delete (own products only), category and a multi-image product gallery.
 3. **Festival offers:** pick a festival (Diwali, Holi, Eid, Christmas, New Year, Republic Day, Independence Day, Black
    Friday, End of Season or custom), a discount of 1 to 90%, start and end, and all products or selected ones.
    Offers can be paused or resumed.

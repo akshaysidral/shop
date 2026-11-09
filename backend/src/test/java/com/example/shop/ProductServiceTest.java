@@ -15,6 +15,7 @@ import com.example.shop.security.AccessGuard;
 import com.example.shop.security.CurrentUser;
 import com.example.shop.service.PricingService;
 import com.example.shop.service.ProductService;
+import com.example.shop.service.S3ImageUploadService;
 import com.example.shop.web.Dtos.ProductRequest;
 import com.example.shop.web.Dtos.ProductResponse;
 import java.math.BigDecimal;
@@ -39,6 +40,7 @@ class ProductServiceTest {
   @Mock PricingService pricing;
   @Mock CurrentUser current;
   @Mock AccessGuard guard;
+  @Mock S3ImageUploadService imageUploads;
   @InjectMocks ProductService service;
 
   User seller;
@@ -66,10 +68,11 @@ class ProductServiceTest {
 
   private void stubPrice() {
     when(pricing.priceOf(any(), any())).thenReturn(new PricingService.Price(new BigDecimal("100.00"), 0, null));
+    lenient().when(imageUploads.resolveImageUrl(any())).thenAnswer(inv -> inv.getArgument(0));
   }
 
   private static ProductRequest request(String name, Long categoryId) {
-    return new ProductRequest(name, "d", new BigDecimal("100"), 5, categoryId, null);
+    return new ProductRequest(name, "d", new BigDecimal("100"), 5, categoryId, null, null);
   }
 
   // ---------------- create ----------------
@@ -79,13 +82,14 @@ class ProductServiceTest {
     when(products.save(any())).thenAnswer(inv -> inv.getArgument(0));
     stubPrice();
 
-    ProductResponse r = service.create(new ProductRequest("  Lamp ", "d", new BigDecimal("100"), 5, 3L, " https://img/x.png "));
+    ProductResponse r = service.create(new ProductRequest("  Lamp ", "d", new BigDecimal("100"), 5, 3L, " https://img/x.png ", null));
 
     assertEquals("Lamp", r.name());
     assertEquals(7L, r.sellerId());
     assertEquals("Acme", r.sellerName());
     assertEquals("Electronics", r.categoryName());
     assertEquals("https://img/x.png", r.imageUrl());
+    assertNull(r.imageKey());
   }
 
   @Test void blankImageUrlBecomesNull() {
@@ -93,10 +97,23 @@ class ProductServiceTest {
     when(products.save(any())).thenAnswer(inv -> inv.getArgument(0));
     stubPrice();
 
-    ProductResponse r = service.create(new ProductRequest("Lamp", "d", new BigDecimal("100"), 5, null, "   "));
+    ProductResponse r = service.create(new ProductRequest("Lamp", "d", new BigDecimal("100"), 5, null, "   ", null));
 
     assertNull(r.imageUrl());
     assertNull(r.categoryId());
+  }
+
+  @Test void savesMultipleProductImagesInTheirSubmittedOrder() {
+    when(current.require()).thenReturn(seller);
+    when(products.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    stubPrice();
+    List<String> imageUrls = List.of("https://images.example/front", "https://images.example/back");
+
+    ProductResponse response = service.create(new ProductRequest(
+        "Lamp", "d", new BigDecimal("100"), 5, null, imageUrls.get(0), imageUrls));
+
+    assertEquals(imageUrls, response.images().stream().map(image -> image.url()).toList());
+    assertTrue(response.images().stream().allMatch(image -> image.key() == null));
   }
 
   @Test void unknownCategoryIsNotFound() {
@@ -189,6 +206,39 @@ class ProductServiceTest {
     assertEquals(20, r.discountPercent());
     assertEquals("Diwali Sale", r.offerName());
     assertEquals("Acme", r.sellerName());
+  }
+
+  @Test void privateS3ImagesAreSignedForDisplayAndKeepTheirObjectKey() {
+    String key = "product/1_lamp/123e4567-e89b-12d3-a456-426614174000.png";
+    Product product = owned(1, seller);
+    product.setImageUrl(key);
+    when(products.findById(1L)).thenReturn(Optional.of(product));
+    stubPrice();
+    when(imageUploads.resolveImageUrl(key)).thenReturn("https://s3.example/signed-read");
+
+    ProductResponse response = service.get(1L);
+
+    assertEquals("https://s3.example/signed-read", response.imageUrl());
+    assertEquals(key, response.imageKey());
+  }
+
+  @Test void returnsAllPrivateProductImagesInTheirSavedOrder() {
+    String firstKey = "product/1_lamp/123e4567-e89b-12d3-a456-426614174000.png";
+    String secondKey = "product/1_lamp/123e4567-e89b-12d3-a456-426614174001.jpg";
+    Product product = owned(1, seller);
+    product.setImageUrls(List.of(firstKey, secondKey));
+    product.setImageUrl(firstKey);
+    when(products.findById(1L)).thenReturn(Optional.of(product));
+    stubPrice();
+    when(imageUploads.resolveImageUrl(firstKey)).thenReturn("https://s3.example/first");
+    when(imageUploads.resolveImageUrl(secondKey)).thenReturn("https://s3.example/second");
+
+    ProductResponse response = service.get(1L);
+
+    assertEquals(List.of(
+        new com.example.shop.web.Dtos.ProductImageResponse("https://s3.example/first", firstKey),
+        new com.example.shop.web.Dtos.ProductImageResponse("https://s3.example/second", secondKey)), response.images());
+    assertEquals("https://s3.example/first", response.imageUrl());
   }
 
   @Test void productWithoutASellerIsSoldByTheMarketplace() {

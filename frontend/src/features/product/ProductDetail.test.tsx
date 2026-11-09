@@ -24,6 +24,20 @@ describe("ProductDetail", () => {
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
   });
 
+  it("shows a gallery and lets buyers switch between product images", async () => {
+    show(makeProduct({
+      name: "Camera",
+      images: [
+        { url: "https://images.example/front", key: "product/1/front.png" },
+        { url: "https://images.example/back", key: "product/1/back.png" },
+      ],
+    }));
+
+    expect(await screen.findByRole("img", { name: "Camera" })).toHaveAttribute("src", "https://images.example/front");
+    await userEvent.click(screen.getByRole("button", { name: "Show product image 2" }));
+    expect(screen.getByRole("img", { name: "Camera" })).toHaveAttribute("src", "https://images.example/back");
+  });
+
   it("explains an offer and shows the crossed-out price", async () => {
     show(makeProduct({ price: 1000, finalPrice: 800, discountPercent: 20, offerName: "Diwali Sale" }));
     expect(await screen.findByText(/applied automatically/i)).toBeInTheDocument();

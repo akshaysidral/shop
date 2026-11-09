@@ -127,5 +127,5 @@ Notes:
 
 ## Known limitations
 - The cart is in memory only (lost on refresh).
-- Category icons are a fixed set of keys; product images are URLs entered by the seller.
+- Category icons are a fixed set of keys; sellers can upload multiple product images, which buyers can browse in the product gallery.
 - No payment, addresses or reviews yet.

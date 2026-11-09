@@ -36,6 +36,7 @@ Admins set rates on **Admin panel > Sellers & commission** and see the commissio
 |---|---|
 | **This file** | overview and quick start |
 | [`docs/MARKETPLACE.md`](docs/MARKETPLACE.md) | roles, journeys, offers, categories, **commission**, brand |
+| [`docs/SESSION-AUTH-FLOW.md`](docs/SESSION-AUTH-FLOW.md) | BFF-style server-side session architecture and authentication flow |
 | [`frontend/README.md`](frontend/README.md) | Material UI, screens, theming, tests |
 | [`backend/README.md`](backend/README.md) | database, configuration, API, permissions, tests |
 | [`postman/README.md`](postman/README.md) | the Postman collection |
@@ -102,6 +103,6 @@ and frontend READMEs for test and coverage commands.
 ## Known gaps
 - No payment step, shipping addresses or product reviews. Commission is calculated and reported; paying sellers out
   is outside this demo.
-- Seller self-registration is open (no admin approval yet); product images are URLs entered by the seller.
+- Seller self-registration is open (no admin approval yet); sellers can upload multiple product images to a private S3 gallery.
 - `ddl-auto: update` builds the schema; use Flyway migrations before production.
 - The name "Bazario" and the logo were created for this project; run a trademark and domain search before commercial use.

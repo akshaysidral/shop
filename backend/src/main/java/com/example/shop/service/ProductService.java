@@ -10,8 +10,11 @@ import com.example.shop.repo.OfferRepository;
 import com.example.shop.repo.ProductRepository;
 import com.example.shop.security.AccessGuard;
 import com.example.shop.security.CurrentUser;
+import com.example.shop.service.S3ImageUploadService;
 import com.example.shop.web.Dtos.ProductRequest;
+import com.example.shop.web.Dtos.ProductImageResponse;
 import com.example.shop.web.Dtos.ProductResponse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ public class ProductService {
   private final PricingService pricing;
   private final CurrentUser current;
   private final AccessGuard guard;
+  private final S3ImageUploadService imageUploads;
 
   @Transactional(readOnly = true)
   public List<ProductResponse> search(String q, Long categoryId, Long sellerId) {
@@ -98,7 +102,15 @@ public class ProductService {
     p.setDescription(r.description());
     p.setPrice(r.price());
     p.setStock(r.stock());
-    p.setImageUrl(r.imageUrl() == null || r.imageUrl().isBlank() ? null : r.imageUrl().trim());
+    if (r.imageUrls() == null) {
+      String imageUrl = r.imageUrl() == null || r.imageUrl().isBlank() ? null : r.imageUrl().trim();
+      p.setImageUrl(imageUrl);
+      p.setImageUrls(imageUrl == null ? new ArrayList<>() : new ArrayList<>(List.of(imageUrl)));
+    } else {
+      List<String> imageUrls = r.imageUrls().stream().map(String::trim).toList();
+      p.setImageUrls(new ArrayList<>(imageUrls));
+      p.setImageUrl(imageUrls.isEmpty() ? null : imageUrls.get(0));
+    }
     if (r.categoryId() == null) {
       p.setCategory(null);
     } else {
@@ -119,9 +131,19 @@ public class ProductService {
     PricingService.Price price = pricing.priceOf(p, live);
     Category c = p.getCategory();
     User s = p.getSeller();
+    List<String> storedImageUrls = p.getImageUrls() == null ? List.of() : p.getImageUrls();
+    if (storedImageUrls.isEmpty() && p.getImageUrl() != null) {
+      storedImageUrls = List.of(p.getImageUrl());
+    }
+    List<ProductImageResponse> images = storedImageUrls.stream()
+        .map(url -> new ProductImageResponse(imageUploads.resolveImageUrl(url),
+            S3ImageUploadService.isManagedObjectKey(url) ? url : null))
+        .toList();
+    ProductImageResponse primaryImage = images.isEmpty() ? null : images.get(0);
     return new ProductResponse(p.getId(), p.getName(), p.getDescription(), p.getPrice(),
-        price.finalPrice(), price.discountPercent(), price.offerName(), p.getStock(), p.getImageUrl(),
+        price.finalPrice(), price.discountPercent(), price.offerName(), p.getStock(),
+        primaryImage == null ? null : primaryImage.url(), primaryImage == null ? null : primaryImage.key(),
         c == null ? null : c.getId(), c == null ? null : c.getName(), c == null ? null : c.getSlug(),
-        s == null ? null : s.getId(), s == null ? "Marketplace" : s.displayName());
+        s == null ? null : s.getId(), s == null ? "Marketplace" : s.displayName(), images);
   }
 }

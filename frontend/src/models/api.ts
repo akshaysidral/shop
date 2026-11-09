@@ -58,12 +58,16 @@ export type Product = {
   offerName: string | null;
   stock: number;
   imageUrl: string | null;
+  imageKey: string | null;
+  images: ProductImageAsset[];
   categoryId: number | null;
   categoryName: string | null;
   categorySlug: string | null;
   sellerId: number | null;
   sellerName: string;
 };
+
+export type ProductImageAsset = { url: string; key: string | null };
 
 export type Category = { id: number; name: string; slug: string; icon: string | null; productCount: number };
 

@@ -38,6 +38,7 @@ app:
       bucket: ${APP_S3_BUCKET:bazario-app}
       region: ${APP_S3_REGION:ap-south-1}
       upload-url-expiration-seconds: ${APP_S3_UPLOAD_URL_EXPIRATION_SECONDS:300}
+      read-url-expiration-seconds: ${APP_S3_READ_URL_EXPIRATION_SECONDS:3600}
 server:
   servlet:
     session:
