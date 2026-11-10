@@ -1,0 +1,44 @@
+# Local development stack. Service settings come from environment/dev/.env.
+name: shop
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DEV_POSTGRES_DB:?Set DEV_POSTGRES_DB in environment/dev/.env}
+      POSTGRES_USER: ${DEV_DB_USER:?Set DEV_DB_USER in environment/dev/.env}
+      POSTGRES_PASSWORD: ${DEV_DB_PASSWORD:?Set DEV_DB_PASSWORD in environment/dev/.env}
+    ports:
+      - "${DEV_DB_BIND_HOST:?Set DEV_DB_BIND_HOST in environment/dev/.env}:${DEV_DB_HOST_PORT:?Set DEV_DB_HOST_PORT in environment/dev/.env}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DEV_DB_USER:?Set DEV_DB_USER in environment/dev/.env} -d ${DEV_POSTGRES_DB:?Set DEV_POSTGRES_DB in environment/dev/.env}"]
+      interval: 5s
+      retries: 10
+  backend:
+    build: ../../backend
+    environment:
+      DB_URL: ${DEV_DB_URL:?Set DEV_DB_URL in environment/dev/.env}
+      DB_USER: ${DEV_DB_USER:?Set DEV_DB_USER in environment/dev/.env}
+      DB_PASSWORD: ${DEV_DB_PASSWORD:?Set DEV_DB_PASSWORD in environment/dev/.env}
+      APP_CORS_ORIGIN: http://localhost
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+      APP_S3_ENABLED: ${APP_S3_ENABLED:-false}
+      APP_S3_BUCKET: ${APP_S3_BUCKET:-bazario-app}
+      APP_S3_REGION: ${APP_S3_REGION:-ap-south-1}
+      APP_S3_UPLOAD_URL_EXPIRATION_SECONDS: ${APP_S3_UPLOAD_URL_EXPIRATION_SECONDS:-300}
+      APP_S3_READ_URL_EXPIRATION_SECONDS: ${APP_S3_READ_URL_EXPIRATION_SECONDS:-3600}
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["${DEV_API_PORT:?Set DEV_API_PORT in environment/dev/.env}:8080"]
+  frontend:
+    build:
+      context: ../../frontend
+      args: { NEXT_PUBLIC_API_URL: "${DEV_API_URL:?Set DEV_API_URL in environment/dev/.env}" }
+    ports: ["${DEV_WEB_PORT:?Set DEV_WEB_PORT in environment/dev/.env}:3000"]
+volumes:
+  pgdata:
+    name: shop_dev_pgdata

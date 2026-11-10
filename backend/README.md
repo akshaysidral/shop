@@ -4,7 +4,7 @@ Java 21 · Spring Boot 3.3 · Spring Security sessions · Spring Session JDBC ·
 
 ## Run
 ```bash
-docker compose up -d db        # start the local PostgreSQL container
+docker compose --env-file environment/dev/.env -f environment/dev/docker-compose.yml up -d db
 cd backend
 mvn spring-boot:run              # API on http://localhost:8080
 mvn verify                       # compile + every test (in-memory H2, no database needed)
@@ -13,33 +13,38 @@ Requires JDK 21 and Maven (`brew install maven openjdk@21` on macOS).
 
 To run the backend with Maven against your local PostgreSQL server and the Compose frontend:
 ```bash
-docker compose stop backend
-docker compose up -d db frontend
+docker compose --env-file environment/dev/.env -f environment/dev/docker-compose.yml stop backend
+docker compose --env-file environment/dev/.env -f environment/dev/docker-compose.yml up -d db frontend
 cd backend
 mvn spring-boot:run
 ```
 The database is PostgreSQL running in the Docker Compose `db` container; it is not a separately installed local database. When the backend runs with Maven on your machine, it connects through `localhost:5433`. When the backend runs as a Compose container, it connects to `db:5432`.
 
-`mvn spring-boot:run` is enough for the local database defaults (`localhost:5433`, user/password `shop`). Spring Boot does not load `.env` automatically, so only source it if you need its overrides (for example, to enable S3):
+Start PostgreSQL from the repository root with `docker compose --env-file environment/dev/.env -f environment/dev/docker-compose.yml up -d db`. For Maven runs, load the development environment file and select the host-side database URL (`DEV_DB_URL` uses Docker's internal hostname and is only for containers):
 ```bash
-set -a && source ../.env && set +a && mvn spring-boot:run
+set -a && source ../environment/dev/.env && set +a
+DB_URL="$DEV_LOCAL_DB_URL" \
+DB_USER="$DEV_DB_USER" \
+DB_PASSWORD="$DEV_DB_PASSWORD" \
+APP_S3_ENABLED="$APP_S3_ENABLED" \
+mvn spring-boot:run
 ```
-For local S3 image uploads with Maven, the host AWS CLI profile must be available; if it uses SSO, run `aws sso login --profile <profile>` before starting the app. The Compose backend mounts `~/.aws` read-only. Set the profile name, bucket and region in `.env` to match your AWS setup. The Compose database persists data in the `pgdata` volume. Do not commit real credentials.
+For local S3 image uploads, set `APP_S3_ENABLED=true` in the command above; the host AWS CLI profile must be available (run `aws sso login --profile <profile>` first if it uses SSO). The Compose backend mounts `~/.aws` read-only. Set the profile name, bucket and region in `environment/dev/.env` to match your AWS setup. The local Compose database persists data in the `shop_dev_pgdata` volume. Do not commit real credentials.
 
 `mvn verify` also generates the JaCoCo XML report at `target/site/jacoco/jacoco.xml` for SonarCloud. The backend project key is `akshaysidral_shop_backend`, configured in [`sonar-project.properties`](sonar-project.properties) under organization `akshaysidral`. Its analysis scope is backend services and the category-slug domain helper; this quality gate does not require a separate test for every controller or view. CI also runs the frontend SonarCloud project and waits for both quality gates.
 
 ## Database
-For local Docker Compose development, PostgreSQL is available at `localhost:5433`, database `shop`, with the development credentials `shop` / `shop` from the root `.env`. For a separately installed PostgreSQL server, set `DB_URL`, `DB_USER`, and `DB_PASSWORD` to match that server.
+For local Docker Compose development, PostgreSQL is available at `localhost:5433`, database/user/password `shop_dev` / `shop_dev` / `shop_dev` by default. Database settings and exposed service ports can be changed in `environment/dev/.env`. The container uses `DEV_DB_URL`; Maven runs on the host use `DEV_LOCAL_DB_URL`. For a separately installed PostgreSQL server, set `DB_URL`, `DB_USER`, and `DB_PASSWORD` to match that server.
 ```sql
-CREATE DATABASE shop;
+CREATE DATABASE shop_dev;
 ```
 Tables are created or updated automatically (`spring.jpa.hibernate.ddl-auto: update`).
-Check the Compose database login: `PGPASSWORD=shop psql -h localhost -p 5433 -U shop -d shop -c "select 1;"`.
+Check the Compose database login: `PGPASSWORD=shop_dev psql -h localhost -p 5433 -U shop_dev -d shop_dev -c "select 1;"`.
 
 ## Configuration (environment variables)
 | Variable | Default | Purpose |
 |---|---|---|
-| `DB_URL`, `DB_USER`, `DB_PASSWORD` | local Postgres, `shop` / `shop` | database |
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | local Postgres, `shop_dev` / `shop_dev` | database |
 | `APP_SESSION_COOKIE_SECURE` | `false` for local HTTP | set `true` when served over HTTPS |
 | `APP_SESSION_COOKIE_SAME_SITE` | `Lax` | set `None` with `Secure=true` only when the frontend and API are cross-site |
 | `server.servlet.session.timeout` | `30m` | server-side session lifetime |

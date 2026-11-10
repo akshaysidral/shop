@@ -4,15 +4,13 @@ This guide explains [`ci-cd.yml`](./ci-cd.yml), how it protects changes, and how
 
 ## What this pipeline does
 
-The workflow has five jobs:
+The workflow has four jobs:
 
 1. **Backend (build and test)** checks out the repository, sets up Java 21 with Maven caching, runs `mvn -B verify` in `backend/`, and uploads test reports, compiled classes, and JaCoCo coverage for SonarQube.
 2. **Frontend (lint, test, build)** installs the locked npm dependencies with `npm ci`, then runs ESLint, Vitest with LCOV coverage, and the Next.js production build from `frontend/`.
 3. **SonarQube (backend and frontend quality gates)** runs after both validation jobs for pushes and same-repository pull requests. It imports the coverage reports and runs separate scans against the backend and frontend project configurations. Each scan waits for its own server quality-gate result.
 4. **Docker images** waits for backend and frontend validation and for SonarQube to pass when the Sonar job runs. It builds backend and frontend images. On pull requests it builds without pushing. On a push to `main` it logs in to GitHub Container Registry (GHCR) and pushes images tagged with the commit SHA and `latest`.
-5. **Deploy to server** runs only after publishing succeeds, only for a push to `main`, and only when the repository variable `DEPLOY_ENABLED` is exactly `true`. It copies the production Compose file to the server, pulls the images, and restarts the services.
-
-The `concurrency` setting groups runs by Git ref and cancels older pull-request runs when a newer commit is pushed to that PR. The workflow starts with read-only repository permissions; the publish job separately grants package-write access.
+The workflow currently builds and publishes images but does not deploy them. Environment deployments will be added when their configuration is introduced. The `concurrency` setting groups runs by Git ref and cancels older pull-request runs when a newer commit is pushed to that PR. The workflow starts with read-only repository permissions; the publish job separately grants package-write access.
 
 ## How a change flows through it
 
@@ -28,7 +26,6 @@ feature/* or bugfix/*
                               │
                               └── Promote with a PR to tst → stg → main
                                      └── Push to main publishes images
-                                          └── Optional production deployment
 ```
 
 The workflow runs validation and SonarCloud analysis on same-repository pull requests regardless of their base branch. The current `push` trigger is limited to `main`; merging to `dev`, `tst`, or `stg` does not independently trigger a push run. PR checks still run before merges when required by the branch ruleset. Each protected branch needs a GitHub ruleset if merges into it must require reviews and successful checks.
@@ -65,23 +62,6 @@ The repository includes separate configurations: [`backend/sonar-project.propert
 
 The Sonar job runs for pushes and same-repository pull requests; a missing token or host URL causes the scan to fail rather than silently skip. Fork-originated pull requests skip SonarCloud because GitHub does not expose repository secrets to those workflows. Push-triggered analysis currently runs only on `main`; PR analysis alone does not count as a default-branch analysis. If `dev` is the SonarCloud default branch and you want a post-merge analysis there, add `dev` to the workflow's `push.branches` list.
 
-### 3. Configure production deployment
-
-The deploy job expects:
-
-| Setting | Type | Purpose |
-|---|---|---|
-| `DEPLOY_ENABLED` | Repository variable | Must be `true` to enable deployment after a push to `main`. Keep unset or false to leave deployment disabled. |
-| `PROD_API_URL` | Repository variable | Public API base URL embedded into the frontend image at build time. Set it to the deployed API URL ending in `/api`. |
-| `SERVER_HOST` | Production environment secret | SSH hostname or IP address. |
-| `SERVER_USER` | Production environment secret | SSH account for deployment. |
-| `SERVER_SSH_KEY` | Production environment secret | Private SSH key used by the copy and SSH actions. |
-| `GHCR_PAT` | Production environment secret | Token that allows the server to pull private GHCR images. Store a least-privilege token with package-read access. |
-
-Add these in **Settings → Environments → production** for deployment secrets, and in **Settings → Secrets and variables → Actions → Variables** for repository variables. Protect the production environment with required reviewers if deployment approval is desired. Never put secret values in this file or commit them to Git.
-
-The workflow uses `GITHUB_TOKEN` to push images. Ensure the repository's Actions settings permit the workflow to write packages. The deployment server must have Docker and the Compose plugin installed, be reachable by SSH from GitHub-hosted runners, and have access to pull the repository's GHCR packages.
-
 ## Adapt it to another project
 
 Use the workflow as a pattern, not a copy-and-paste template:
@@ -102,6 +82,4 @@ Use the workflow as a pattern, not a copy-and-paste template:
 | Required check is not selectable in a ruleset | Run a PR through the workflow first. Select the job check names, not an individual step such as `Lint`. |
 | Frontend lint fails on generated Next.js files | Keep `.next/**` and `next-env.d.ts` excluded in `frontend/eslint.config.js`. |
 | Docker images build but are not published | Publishing occurs on pushes to `main`; pull-request builds intentionally do not push. Check the `PUSH` condition and package permissions. |
-| Deployment is skipped | Confirm the event is a push to `main`, `publish` succeeded, `DEPLOY_ENABLED` is exactly `true`, and the production environment is configured. |
-| Deployment cannot pull from GHCR | Check that `GHCR_PAT` is valid and can read the packages, and that image access is allowed for the server. |
-| Frontend calls the wrong API | `NEXT_PUBLIC_API_URL` is a Docker build argument and is embedded during the Next.js build. Set `PROD_API_URL` before publishing a new image. |
+| Frontend calls the wrong API | `NEXT_PUBLIC_API_URL` is a Docker build argument and is embedded during the Next.js build. Update it when configuring the target environment. |
