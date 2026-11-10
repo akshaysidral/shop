@@ -4,33 +4,37 @@ Java 21 · Spring Boot 3.3 · Spring Security sessions · Spring Session JDBC ·
 
 ## Run
 ```bash
+docker compose up -d db        # start the local PostgreSQL container
 cd backend
 mvn spring-boot:run              # API on http://localhost:8080
 mvn verify                       # compile + every test (in-memory H2, no database needed)
 ```
 Requires JDK 21 and Maven (`brew install maven openjdk@21` on macOS).
 
-To run the backend with Maven while using the Compose database and frontend, run from the repository root:
+To run the backend with Maven against your local PostgreSQL server and the Compose frontend:
 ```bash
-docker compose up -d db frontend
 docker compose stop backend
+docker compose up -d db frontend
 cd backend
-APP_S3_ENABLED=true APP_S3_BUCKET=bazario-app APP_S3_REGION=ap-south-1 \
-DB_URL=jdbc:postgresql://localhost:5433/shop DB_USER=shop DB_PASSWORD=shop \
 mvn spring-boot:run
 ```
-The Compose database is published only on localhost port 5433 for this workflow, avoiding the default PostgreSQL port in case a local database already uses it. The Compose backend and the Maven backend both use host port 8080, so run only one at a time. Stop Maven with Ctrl-C before starting the Compose backend again.
+The database is PostgreSQL running in the Docker Compose `db` container; it is not a separately installed local database. When the backend runs with Maven on your machine, it connects through `localhost:5433`. When the backend runs as a Compose container, it connects to `db:5432`.
+
+`mvn spring-boot:run` is enough for the local database defaults (`localhost:5433`, user/password `shop`). Spring Boot does not load `.env` automatically, so only source it if you need its overrides (for example, to enable S3):
+```bash
+set -a && source ../.env && set +a && mvn spring-boot:run
+```
+For local S3 image uploads with Maven, the host AWS CLI profile must be available; if it uses SSO, run `aws sso login --profile <profile>` before starting the app. The Compose backend mounts `~/.aws` read-only. Set the profile name, bucket and region in `.env` to match your AWS setup. The Compose database persists data in the `pgdata` volume. Do not commit real credentials.
 
 `mvn verify` also generates the JaCoCo XML report at `target/site/jacoco/jacoco.xml` for SonarCloud. The backend project key is `akshaysidral_shop_backend`, configured in [`sonar-project.properties`](sonar-project.properties) under organization `akshaysidral`. Its analysis scope is backend services and the category-slug domain helper; this quality gate does not require a separate test for every controller or view. CI also runs the frontend SonarCloud project and waits for both quality gates.
 
 ## Database
-PostgreSQL at `localhost:5432`, database `shop`, user `shop`, password `shop`.
+For local Docker Compose development, PostgreSQL is available at `localhost:5433`, database `shop`, with the development credentials `shop` / `shop` from the root `.env`. For a separately installed PostgreSQL server, set `DB_URL`, `DB_USER`, and `DB_PASSWORD` to match that server.
 ```sql
-CREATE USER shop WITH PASSWORD 'shop';
-CREATE DATABASE shop OWNER shop;
+CREATE DATABASE shop;
 ```
 Tables are created or updated automatically (`spring.jpa.hibernate.ddl-auto: update`).
-Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1;"`.
+Check the Compose database login: `PGPASSWORD=shop psql -h localhost -p 5433 -U shop -d shop -c "select 1;"`.
 
 ## Configuration (environment variables)
 | Variable | Default | Purpose |
@@ -39,7 +43,7 @@ Check the login: `PGPASSWORD=shop psql -h localhost -U shop -d shop -c "select 1
 | `APP_SESSION_COOKIE_SECURE` | `false` for local HTTP | set `true` when served over HTTPS |
 | `APP_SESSION_COOKIE_SAME_SITE` | `Lax` | set `None` with `Secure=true` only when the frontend and API are cross-site |
 | `server.servlet.session.timeout` | `30m` | server-side session lifetime |
-| `APP_CORS_ORIGIN` | `http://localhost:3000,http://localhost:3001` | allowed browser origin(s) |
+| `APP_CORS_ORIGIN` | `http://localhost,http://localhost:3000,http://localhost:3001` | allowed browser origin(s) |
 | `APP_COMMISSION_DEFAULT` | `5` | commission percent given to newly registered sellers |
 | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` | `admin@shop.local` / `Admin@12345` | first admin (blank email = none) |
 | `APP_SELLER_EMAIL`, `APP_SELLER_PASSWORD`, `APP_SELLER_STORE` | `seller@bazario.local` / `Seller@12345` / `Bazario Mart` | demo seller at 5% (blank = none) |
@@ -58,7 +62,7 @@ Configure S3 bucket CORS separately from the application. For local development,
 ```json
 [
   {
-    "AllowedOrigins": ["http://localhost:3000"],
+    "AllowedOrigins": ["http://localhost"],
     "AllowedMethods": ["PUT"],
     "AllowedHeaders": ["Content-Type"],
     "ExposeHeaders": ["ETag"],
@@ -125,7 +129,7 @@ refresh        refresh cookie                                                   
 logout         refresh cookie                                                                       -> 204 + cleared cookie
 product req    {"name","description","price":1000,"stock":10,"categoryId":3,"imageUrls":["<object-key-1>","<object-key-2>"]}
 product        {"id","name","description","price":1000,"finalPrice":800,"discountPercent":20,"offerName":"Diwali Sale",
-                "stock","imageUrl","imageKey","images":[{"url":"<signed-url>","key":"<object-key>"}],
+                "stock","images":[{"url":"<signed-url>","key":"<object-key>"}],
                 "categoryId","categoryName","sellerId","sellerName"}
 category       {"id","name","icon":"phone","productCount"}      request: {"name","icon"}     (icon = a short key)
 offer req      {"name","discountPercent":20,"startsAt":"2026-10-20T00:00:00Z","endsAt":"...","active":true,
@@ -139,7 +143,7 @@ earnings       {"commissionPercent","grossSales","commission","netEarnings","pay
 seller summary {"id","email","storeName","commissionPercent","unitsSold","grossSales","commission"}
 image upload  POST /api/seller/products/{productId}/image-upload-url once per image with {"contentType":"image/png","fileSizeBytes":1024}
               -> {"objectKey":"product/{productId}_{product-name}/{uuid}.png","uploadUrl","expiresAt","requiredHeaders"}
-              PUT each file to its uploadUrl, then save all objectKeys in imageUrls (imageUrl remains the primary image).
+              PUT each file to its uploadUrl, then save all objectKeys in imageUrls. The first entry is the primary image.
               Product responses include temporary private-S3 URLs and keys for each image.
 set commission {"percent":3}           (0 to 30)
 user           {"id","email","storeName","commissionPercent","roles":[...],"permissions":[...]}

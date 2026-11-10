@@ -42,7 +42,7 @@ describe("ProductFormModal", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(api.post).toHaveBeenCalledWith("/products", {
-      name: "Lamp", description: "Bright", price: 499.5, stock: 7, categoryId: 3, imageUrl: null, imageUrls: [],
+      name: "Lamp", description: "Bright", price: 499.5, stock: 7, categoryId: 3, imageUrls: [],
     });
     expect(onSaved).toHaveBeenCalled();
   });
@@ -60,7 +60,6 @@ describe("ProductFormModal", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(api.post).toHaveBeenCalledWith("/products", expect.objectContaining({
       categoryId: null,
-      imageUrl: null,
       imageUrls: [],
     }));
   });
@@ -83,14 +82,12 @@ describe("ProductFormModal", () => {
     const key = "product/9_old/123e4567-e89b-12d3-a456-426614174000.png";
     open(makeProduct({
       id: 9,
-      imageUrl: "https://s3.example/signed-read",
-      imageKey: key,
       images: [{ url: "https://s3.example/signed-read", key }],
     }));
 
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(api.put).toHaveBeenCalledWith("/products/9", expect.objectContaining({ imageUrl: key, imageUrls: [key] }));
+    expect(api.put).toHaveBeenCalledWith("/products/9", expect.objectContaining({ imageUrls: [key] }));
   });
 
   it("uploads multiple product images to S3 and saves all object keys in order", async () => {
@@ -137,7 +134,6 @@ describe("ProductFormModal", () => {
       body: files[1],
     });
     expect(api.put).toHaveBeenCalledWith("/products/12", expect.objectContaining({
-      imageUrl: "product/12_lamp/123e4567-e89b-12d3-a456-426614174000.png",
       imageUrls: [
         "product/12_lamp/123e4567-e89b-12d3-a456-426614174000.png",
         "product/12_lamp/123e4567-e89b-12d3-a456-426614174001.jpg",
@@ -159,7 +155,6 @@ describe("ProductFormModal", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(api.put).toHaveBeenCalledWith("/products/1", expect.objectContaining({
-      imageUrl: "https://images.example/back",
       imageUrls: ["https://images.example/back"],
     }));
   });

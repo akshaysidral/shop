@@ -63,7 +63,7 @@ export default function CartPage() {
         <List disablePadding>
           {lines.map((l) => (
             <ListItem key={l.product.id} divider sx={{ gap: 2, alignItems: "center" }}>
-              <ProductImage name={l.product.name} src={l.product.imageUrl} size="sm" />
+              <ProductImage name={l.product.name} src={l.product.images?.[0]?.url} size="sm" />
               <Box sx={{ flexGrow: 1 }}>
                 <Link component={NextLink} href={`/product/${l.product.id}`} underline="hover" sx={{ fontWeight: 600 }}>{l.product.name}</Link>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Sold by {l.product.sellerName}</Typography>

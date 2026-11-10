@@ -38,11 +38,7 @@ export default function ProductFormModal({ show, product, categories, onClose, o
     if (!show) return;
     setError("");
     setImageFiles([]);
-    setCurrentImages(product?.images?.length
-      ? product.images
-      : product?.imageUrl
-        ? [{ url: product.imageUrl, key: product.imageKey }]
-        : []);
+    setCurrentImages(product?.images ?? []);
     setCreatedProductId(null);
     setForm(product
       ? {
@@ -85,7 +81,6 @@ export default function ProductFormModal({ show, product, categories, onClose, o
       price,
       stock,
       categoryId: form.categoryId ? Number(form.categoryId) : null,
-      imageUrl: imageUrls[0] ?? null,
       imageUrls,
     };
     let productSaved = Boolean(product?.id || createdProductId);
@@ -130,7 +125,6 @@ export default function ProductFormModal({ show, product, categories, onClose, o
         const allImageUrls = [...imageUrls, ...uploadedKeys];
         await api.put(`/products/${productId}`, {
           ...body,
-          imageUrl: allImageUrls[0] ?? null,
           imageUrls: allImageUrls,
         });
       }

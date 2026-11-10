@@ -51,7 +51,7 @@ shop/
 ├── postman/                Postman collection
 ├── docs/                   extra documentation
 ├── .github/workflows/      CI/CD pipeline
-├── docker-compose.yml      local stack (db + backend + frontend)
+├── docker-compose.yml      local app stack (backend + frontend + PostgreSQL)
 ├── docker-compose.prod.yml server stack (pulls images from GHCR)
 └── .env.example            variables for the production server
 ```
@@ -63,7 +63,10 @@ You need **JDK 21**, **Maven**, **Node 20+** and a **PostgreSQL** server.
 2. **Backend:** `cd backend && mvn spring-boot:run` (http://localhost:8080)
 3. **Frontend:** `cd frontend && npm install && npm run dev` (http://localhost:3000)
 
-Docker alternative: `docker compose up --build` (UI http://localhost, API http://localhost:8080).
+Docker alternative: set `DB_USER` and `DB_PASSWORD` in the ignored root `.env` file, then run
+`docker compose up --build` (UI http://localhost, API http://localhost:8080). Compose starts a PostgreSQL container
+and persists its data in the `pgdata` volume. The development defaults are `shop` / `shop`; change them in `.env`
+before starting if desired. PostgreSQL is published on `localhost:5433` for local database tools.
 
 ### Default accounts (development only)
 | Account | Email | Password | Commission |

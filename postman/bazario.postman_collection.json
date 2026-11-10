@@ -1871,7 +1871,7 @@
             "description": "The product is owned by the caller. Run 06 > Create category first (or remove categoryId).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Seller Item\",\n  \"description\": \"Listed by my store\",\n  \"price\": 1000,\n  \"stock\": 10,\n  \"categoryId\": \"{{categoryId}}\",\n  \"imageUrl\": \"\"\n}",
+              "raw": "{\n  \"name\": \"Seller Item\",\n  \"description\": \"Listed by my store\",\n  \"price\": 1000,\n  \"stock\": 10,\n  \"categoryId\": \"{{categoryId}}\",\n  \"imageUrls\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
