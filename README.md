@@ -51,22 +51,30 @@ shop/
 ├── postman/                Postman collection
 ├── docs/                   extra documentation
 ├── .github/workflows/      CI/CD pipeline
-├── docker-compose.yml      local app stack (backend + frontend + PostgreSQL)
-├── docker-compose.prod.yml server stack (pulls images from GHCR)
-└── .env.example            variables for the production server
+└── environment/            Per-environment Docker Compose files and settings
+    └── dev/
+        ├── docker-compose.yml  local development app stack
+        └── .env                local settings (ignored by Git)
 ```
 
 ## Quick start (local development)
 You need **JDK 21**, **Maven**, **Node 20+** and a **PostgreSQL** server.
 
-1. **Database** (once): `CREATE USER shop WITH PASSWORD 'shop'; CREATE DATABASE shop OWNER shop;`
+1. **Database** (once): start the local development database with `docker compose --env-file environment/dev/.env -f environment/dev/docker-compose.yml up -d db`.
+   It creates the `shop_dev` database in its own persistent Docker volume.
 2. **Backend:** `cd backend && mvn spring-boot:run` (http://localhost:8080)
 3. **Frontend:** `cd frontend && npm install && npm run dev` (http://localhost:3000)
 
-Docker alternative: set `DB_USER` and `DB_PASSWORD` in the ignored root `.env` file, then run
-`docker compose up --build` (UI http://localhost, API http://localhost:8080). Compose starts a PostgreSQL container
-and persists its data in the `pgdata` volume. The development defaults are `shop` / `shop`; change them in `.env`
-before starting if desired. PostgreSQL is published on `localhost:5433` for local database tools.
+Full-stack Docker alternative: use the ignored `environment/dev/.env` file, then run
+`docker compose --env-file environment/dev/.env -f environment/dev/docker-compose.yml up --build`
+(UI http://localhost, API http://localhost:8080). Compose starts a PostgreSQL container
+and persists its data in the `shop_dev_pgdata` volume. The development defaults are database/user/password
+`shop_dev` / `shop_dev` / `shop_dev`; change the `DEV_*` values in `environment/dev/.env` before first startup if desired.
+Database connection URLs and exposed DB/API/web ports are configured there too; PostgreSQL is bound to
+`127.0.0.1:5433` by default.
+
+The `environment/` folder currently contains only the local development setup. We will add test, staging, and
+production configurations one at a time when those environments are needed.
 
 ### Default accounts (development only)
 | Account | Email | Password | Commission |
@@ -95,7 +103,7 @@ environment** (`APP_ADMIN_*`, `APP_SELLER_*`, `APP_SELLER2_*`).
 | Run backend / tests | `cd backend && mvn spring-boot:run` / `mvn verify` |
 | Run frontend | `cd frontend && npm run dev` |
 | Frontend lint / tests / build | `npm run lint` / `npm test` / `npm run build` |
-| Full stack in Docker | `docker compose up --build` |
+| Full stack in Docker | `docker compose --env-file environment/dev/.env -f environment/dev/docker-compose.yml up --build` |
 
 ## Testing
 The backend tests cover models, DTOs, security, services, pricing and commission calculations, plus controller
