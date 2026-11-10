@@ -75,6 +75,10 @@ public class S3ImageUploadService {
         .build()).url().toString();
   }
 
+  public boolean isConfigured() {
+    return !bucket.isBlank() && presigners.getIfAvailable() != null;
+  }
+
   public static boolean isManagedObjectKey(String value) {
     return value != null && value.matches("product/[0-9]+_[a-z0-9-]+/[0-9a-f-]{36}\\.(jpg|png|webp)");
   }

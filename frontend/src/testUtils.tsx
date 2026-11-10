@@ -18,8 +18,6 @@ export function makeProduct(overrides: Partial<Product> = {}): Product {
     discountPercent: 0,
     offerName: null,
     stock: 3,
-    imageUrl: null,
-    imageKey: null,
     images: [],
     categoryId: 1,
     categoryName: "Electronics",

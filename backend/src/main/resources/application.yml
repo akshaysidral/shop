@@ -4,9 +4,9 @@ spring:
     jdbc:
       initialize-schema: always
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/shop}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:admin}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/shop}
+    username: ${DB_USER:shop}
+    password: ${DB_PASSWORD:shop}
   jpa:
     hibernate.ddl-auto: update # switch to Flyway migrations for production
     open-in-view: false
@@ -31,7 +31,7 @@ app:
     password: ${APP_SELLER2_PASSWORD:Seller2@12345}
     store-name: ${APP_SELLER2_STORE:Preferred Picks}
     commission-percent: 3 # preferred seller
-  cors-origin: ${APP_CORS_ORIGIN:http://localhost:3000,http://localhost:3001}
+  cors-origin: ${APP_CORS_ORIGIN:http://localhost,http://localhost:3000,http://localhost:3001}
   storage:
     s3:
       enabled: ${APP_S3_ENABLED:false}

@@ -29,8 +29,6 @@ public class Product {
   private User seller;
   @ManyToOne(fetch = FetchType.LAZY)
   private Category category;
-  @Column(length = 500)
-  private String imageUrl;
 
   @ElementCollection
   @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))

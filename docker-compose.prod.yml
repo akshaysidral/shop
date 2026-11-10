@@ -4,7 +4,7 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: shop
+      POSTGRES_DB: ${POSTGRES_DB:-shop}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
@@ -17,7 +17,7 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY}/backend:latest
     restart: unless-stopped
     environment:
-      DB_URL: jdbc:postgresql://db:5432/shop
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-shop}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       APP_SESSION_COOKIE_SECURE: ${APP_SESSION_COOKIE_SECURE:-true}

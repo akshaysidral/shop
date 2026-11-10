@@ -36,11 +36,7 @@ export default function ProductDetail() {
 
   const out = product.stock <= 0;
   const quantities = Array.from({ length: Math.min(product.stock, 10) }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
-  const images = product.images?.length
-    ? product.images
-    : product.imageUrl
-      ? [{ url: product.imageUrl, key: product.imageKey }]
-      : [];
+  const images = product.images ?? [];
   const selectedImage = images[selectedImageIndex] ?? images[0];
 
   return (

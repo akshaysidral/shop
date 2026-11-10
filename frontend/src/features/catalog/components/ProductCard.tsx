@@ -34,7 +34,7 @@ export default function ProductCard({ product }: { product: Product }) {
             -{product.discountPercent}%
           </Box>
         )}
-        <ProductImage name={product.name} src={product.imageUrl} />
+        <ProductImage name={product.name} src={product.images?.[0]?.url} />
         <CardContent sx={{ pb: 1 }}>
           <Typography variant="subtitle1" component="h3" className={styles.productName}>
             {product.name}

@@ -63,7 +63,7 @@ export default function ProductManager({ source, title, showSeller = false }: { 
                 <TableRow key={p.id} hover>
                   <TableCell>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <ProductImage name={p.name} src={p.imageUrl} size="sm" />
+                      <ProductImage name={p.name} src={p.images?.[0]?.url} size="sm" />
                       <Typography sx={{ fontWeight: 600 }}>{p.name}</Typography>
                     </Box>
                   </TableCell>
