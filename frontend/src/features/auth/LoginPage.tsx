@@ -13,7 +13,7 @@ import { api, errMsg } from "../../api";
 import { BuyButton } from "../../components/Buttons";
 import { BagIcon } from "../../icons";
 import { brand } from "../../theme";
-import { useAuth } from "../../AuthContext";
+import { AUTH_SESSION_HINT_KEY, useAuth } from "../../AuthContext";
 
 type AccountType = "BUYER" | "SELLER";
 export default function LoginPage({ onAuth }: { onAuth?: () => void | Promise<void> } = {}) {
@@ -44,6 +44,7 @@ export default function LoginPage({ onAuth }: { onAuth?: () => void | Promise<vo
           ? { email, password, accountType, storeName: storeName.trim() }
           : { email, password, accountType };
       await api.post(`/auth/${mode}`, body);
+      localStorage.setItem(AUTH_SESSION_HINT_KEY, "true");
       await (onAuth ?? refresh)();
       const fallback = mode === "register" && accountType === "SELLER" ? "/seller" : "/";
       router.replace(hint.from ?? fallback);

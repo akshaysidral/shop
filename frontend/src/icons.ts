@@ -29,6 +29,10 @@ export { default as AppsIcon } from "@mui/icons-material/Apps";
 export { default as EmptyCartIcon } from "@mui/icons-material/RemoveShoppingCart";
 export { default as BagIcon } from "@mui/icons-material/ShoppingBag";
 export { default as TrendIcon } from "@mui/icons-material/TrendingUp";
+export { default as CloseIcon } from "@mui/icons-material/Close";
+export { default as ChevronLeftIcon } from "@mui/icons-material/ChevronLeft";
+export { default as ChevronRightIcon } from "@mui/icons-material/ChevronRight";
+export { default as ZoomInIcon } from "@mui/icons-material/ZoomIn";
 // category icons
 export { default as PhoneIcon } from "@mui/icons-material/PhoneIphone";
 export { default as FashionIcon } from "@mui/icons-material/Checkroom";

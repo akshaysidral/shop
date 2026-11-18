@@ -1,0 +1,180 @@
+.gallery {
+  width: 100%;
+}
+
+.mainImage {
+  position: relative;
+}
+
+.mainImageButton {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.zoomBadge {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 60%);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.mainArrow {
+  position: absolute !important;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  background: rgb(255 255 255 / 90%) !important;
+}
+
+.mainArrow:hover {
+  background: #fff !important;
+}
+
+.mainArrowNext {
+  right: 8px;
+  left: auto;
+}
+
+.thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.thumbnail {
+  min-width: 0;
+  padding: 2px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.thumbnailSelected {
+  border-color: #1976d2;
+}
+
+.viewerPaper {
+  width: min(90vw, 82vh, 720px) !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0 !important;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.viewerContent {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  overflow: visible !important;
+  background: transparent;
+}
+
+.viewerStage {
+  position: relative;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.viewerControl {
+  position: absolute !important;
+  z-index: 1;
+  width: 48px;
+  height: 48px;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  background: rgb(0 0 0 / 72%) !important;
+  color: #fff !important;
+}
+
+.viewerControl:hover {
+  background: rgb(0 0 0 / 90%) !important;
+}
+
+.viewerControl :global(.MuiSvgIcon-root) {
+  font-size: 30px;
+}
+
+.closeButton {
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+}
+
+.closeButton :global(.MuiSvgIcon-root) {
+  font-size: 22px;
+}
+
+.previousButton {
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+}
+
+.nextButton {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+}
+
+.zoomSurface {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  touch-action: none;
+}
+
+.zoomed {
+  cursor: zoom-out;
+}
+
+.zoomImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 180ms ease;
+}

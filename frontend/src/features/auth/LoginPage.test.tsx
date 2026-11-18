@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { api } from "../../api";
+import { AUTH_SESSION_HINT_KEY } from "../../AuthContext";
 import LoginPage from "./LoginPage";
 import { apiError, renderApp } from "../../testUtils";
 
@@ -24,6 +25,7 @@ describe("LoginPage login", () => {
     await userEvent.click(screen.getByRole("button", { name: "Login" }));
     expect(api.post).toHaveBeenCalledWith("/auth/login", { email: "a@b.com", password: "secret1" });
     expect(localStorage.getItem("token")).toBeNull();
+    expect(localStorage.getItem(AUTH_SESSION_HINT_KEY)).toBe("true");
     expect(onAuth).toHaveBeenCalled();
     expect(screen.getByTestId("location")).toHaveTextContent(/^\/$/);
   });
@@ -43,6 +45,7 @@ describe("LoginPage login", () => {
     await userEvent.click(screen.getByRole("button", { name: "Login" }));
     expect(await screen.findByText(/request failed/i)).toBeInTheDocument();
     expect(localStorage.getItem("token")).toBeNull();
+    expect(localStorage.getItem(AUTH_SESSION_HINT_KEY)).toBeNull();
     expect(onAuth).not.toHaveBeenCalled();
   });
 
