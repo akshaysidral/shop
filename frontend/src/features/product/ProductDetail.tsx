@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import NextLink from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Alert from "@mui/material/Alert";
@@ -12,7 +12,7 @@ import type { Product } from "../../api";
 import { BuyButton } from "../../components/Buttons";
 import Loading from "../../components/Loading";
 import PriceTag from "../../components/PriceTag";
-import ProductImage from "../../components/ProductImage";
+import ProductImageGallery from "./ProductImageGallery";
 import SelectField from "../../components/SelectField";
 import { useCart } from "../../CartContext";
 import { AddToCartIcon, BoltIcon, SparkIcon } from "../../icons";
@@ -25,9 +25,7 @@ export default function ProductDetail() {
   const { data: product, loading, error } = useFetch<Product>(`/products/${id}`);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
-  useEffect(() => setSelectedImageIndex(0), [product?.id]);
+  const images = useMemo(() => product?.images ?? [], [product?.images]);
 
   if (loading) return <Loading />;
   if (error || !product) {
@@ -36,28 +34,11 @@ export default function ProductDetail() {
 
   const out = product.stock <= 0;
   const quantities = Array.from({ length: Math.min(product.stock, 10) }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
-  const images = product.images ?? [];
-  const selectedImage = images[selectedImageIndex] ?? images[0];
 
   return (
     <Paper variant="outlined" sx={{ p: 2, display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", md: "5fr 7fr" } }}>
       <Box>
-        <ProductImage key={selectedImage?.url} name={product.name} src={selectedImage?.url} size="lg" />
-        {images.length > 1 && (
-          <Box aria-label="Product image gallery" sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-            {images.map((image, index) => (
-              <Button
-                key={`${image.key ?? image.url}-${index}`}
-                aria-label={`Show product image ${index + 1}`}
-                aria-pressed={selectedImageIndex === index}
-                onClick={() => setSelectedImageIndex(index)}
-                sx={{ minWidth: 0, p: 0.25, border: 1, borderColor: selectedImageIndex === index ? "primary.main" : "divider" }}
-              >
-                <ProductImage name={`${product.name} image ${index + 1}`} src={image.url} size="sm" />
-              </Button>
-            ))}
-          </Box>
-        )}
+        <ProductImageGallery key={product.id} name={product.name} images={images} />
       </Box>
       <Box>
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 1, fontSize: "0.85rem" }}>
