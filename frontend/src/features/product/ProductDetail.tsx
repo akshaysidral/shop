@@ -25,13 +25,7 @@ export default function ProductDetail() {
   const { data: product, loading, error } = useFetch<Product>(`/products/${id}`);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  const images = useMemo(() => (
-    product?.images?.length
-      ? product.images
-      : product?.imageUrl
-        ? [{ url: product.imageUrl, key: product.imageKey }]
-        : []
-  ), [product?.images, product?.imageUrl, product?.imageKey]);
+  const images = useMemo(() => product?.images ?? [], [product?.images]);
 
   if (loading) return <Loading />;
   if (error || !product) {
