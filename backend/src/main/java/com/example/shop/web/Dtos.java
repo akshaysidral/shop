@@ -46,7 +46,6 @@ public final class Dtos {
       @NotNull @Positive BigDecimal price,
       @PositiveOrZero int stock,
       Long categoryId,
-      @Size(max = 500) String imageUrl,
       List<@NotBlank @Size(max = 500) String> imageUrls) {
   }
 
@@ -65,7 +64,7 @@ public final class Dtos {
    */
   public record ProductResponse(Long id, String name, String description, BigDecimal price,
       BigDecimal finalPrice, int discountPercent, String offerName,
-      int stock, String imageUrl, String imageKey, Long categoryId, String categoryName, String categorySlug,
+      int stock, Long categoryId, String categoryName, String categorySlug,
       Long sellerId, String sellerName, List<ProductImageResponse> images) {
   }
 

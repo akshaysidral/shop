@@ -102,15 +102,10 @@ public class ProductService {
     p.setDescription(r.description());
     p.setPrice(r.price());
     p.setStock(r.stock());
-    if (r.imageUrls() == null) {
-      String imageUrl = r.imageUrl() == null || r.imageUrl().isBlank() ? null : r.imageUrl().trim();
-      p.setImageUrl(imageUrl);
-      p.setImageUrls(imageUrl == null ? new ArrayList<>() : new ArrayList<>(List.of(imageUrl)));
-    } else {
-      List<String> imageUrls = r.imageUrls().stream().map(String::trim).toList();
-      p.setImageUrls(new ArrayList<>(imageUrls));
-      p.setImageUrl(imageUrls.isEmpty() ? null : imageUrls.get(0));
-    }
+    List<String> imageUrls = r.imageUrls() == null
+        ? List.of()
+        : r.imageUrls().stream().map(String::trim).toList();
+    p.setImageUrls(new ArrayList<>(imageUrls));
     if (r.categoryId() == null) {
       p.setCategory(null);
     } else {
@@ -132,17 +127,13 @@ public class ProductService {
     Category c = p.getCategory();
     User s = p.getSeller();
     List<String> storedImageUrls = p.getImageUrls() == null ? List.of() : p.getImageUrls();
-    if (storedImageUrls.isEmpty() && p.getImageUrl() != null) {
-      storedImageUrls = List.of(p.getImageUrl());
-    }
     List<ProductImageResponse> images = storedImageUrls.stream()
+        .filter(url -> !S3ImageUploadService.isManagedObjectKey(url) || imageUploads.isConfigured())
         .map(url -> new ProductImageResponse(imageUploads.resolveImageUrl(url),
             S3ImageUploadService.isManagedObjectKey(url) ? url : null))
         .toList();
-    ProductImageResponse primaryImage = images.isEmpty() ? null : images.get(0);
     return new ProductResponse(p.getId(), p.getName(), p.getDescription(), p.getPrice(),
         price.finalPrice(), price.discountPercent(), price.offerName(), p.getStock(),
-        primaryImage == null ? null : primaryImage.url(), primaryImage == null ? null : primaryImage.key(),
         c == null ? null : c.getId(), c == null ? null : c.getName(), c == null ? null : c.getSlug(),
         s == null ? null : s.getId(), s == null ? "Marketplace" : s.displayName(), images);
   }

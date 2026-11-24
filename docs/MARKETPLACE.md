@@ -94,5 +94,5 @@ cannot be deleted. Products can be filtered with `GET /api/products?categoryId=.
 Run the new backend once (`ddl-auto: update`). It adds the new columns (`commission_percent` on users; commission
 snapshot columns on order items), sets the commission of existing demo sellers (5%), renames the old `USER` role to
 `BUYER`, gives old products to the first demo seller and the Electronics category, and shows old order lines as PLACED.
-Existing sellers without a rate use the default (5%) until an admin changes it. For a clean start, drop and recreate the
-`shop` database.
+Existing sellers without a rate use the default (5%) until an admin changes it. For a clean local development start,
+reset the `shop_dev` database; do not drop a production database.

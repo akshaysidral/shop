@@ -57,8 +57,6 @@ export type Product = {
   discountPercent: number;
   offerName: string | null;
   stock: number;
-  imageUrl: string | null;
-  imageKey: string | null;
   images: ProductImageAsset[];
   categoryId: number | null;
   categoryName: string | null;

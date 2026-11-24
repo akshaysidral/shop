@@ -68,11 +68,12 @@ class ProductServiceTest {
 
   private void stubPrice() {
     when(pricing.priceOf(any(), any())).thenReturn(new PricingService.Price(new BigDecimal("100.00"), 0, null));
+    lenient().when(imageUploads.isConfigured()).thenReturn(true);
     lenient().when(imageUploads.resolveImageUrl(any())).thenAnswer(inv -> inv.getArgument(0));
   }
 
   private static ProductRequest request(String name, Long categoryId) {
-    return new ProductRequest(name, "d", new BigDecimal("100"), 5, categoryId, null, null);
+    return new ProductRequest(name, "d", new BigDecimal("100"), 5, categoryId, null);
   }
 
   // ---------------- create ----------------
@@ -82,24 +83,24 @@ class ProductServiceTest {
     when(products.save(any())).thenAnswer(inv -> inv.getArgument(0));
     stubPrice();
 
-    ProductResponse r = service.create(new ProductRequest("  Lamp ", "d", new BigDecimal("100"), 5, 3L, " https://img/x.png ", null));
+    ProductResponse r = service.create(new ProductRequest(
+        "  Lamp ", "d", new BigDecimal("100"), 5, 3L, List.of(" https://img/x.png ")));
 
     assertEquals("Lamp", r.name());
     assertEquals(7L, r.sellerId());
     assertEquals("Acme", r.sellerName());
     assertEquals("Electronics", r.categoryName());
-    assertEquals("https://img/x.png", r.imageUrl());
-    assertNull(r.imageKey());
+    assertEquals("https://img/x.png", r.images().get(0).url());
   }
 
-  @Test void blankImageUrlBecomesNull() {
+  @Test void emptyImageListIsSavedWithoutImages() {
     when(current.require()).thenReturn(seller);
     when(products.save(any())).thenAnswer(inv -> inv.getArgument(0));
     stubPrice();
 
-    ProductResponse r = service.create(new ProductRequest("Lamp", "d", new BigDecimal("100"), 5, null, "   ", null));
+    ProductResponse r = service.create(new ProductRequest("Lamp", "d", new BigDecimal("100"), 5, null, List.of()));
 
-    assertNull(r.imageUrl());
+    assertTrue(r.images().isEmpty());
     assertNull(r.categoryId());
   }
 
@@ -110,7 +111,7 @@ class ProductServiceTest {
     List<String> imageUrls = List.of("https://images.example/front", "https://images.example/back");
 
     ProductResponse response = service.create(new ProductRequest(
-        "Lamp", "d", new BigDecimal("100"), 5, null, imageUrls.get(0), imageUrls));
+        "Lamp", "d", new BigDecimal("100"), 5, null, imageUrls));
 
     assertEquals(imageUrls, response.images().stream().map(image -> image.url()).toList());
     assertTrue(response.images().stream().allMatch(image -> image.key() == null));
@@ -211,15 +212,15 @@ class ProductServiceTest {
   @Test void privateS3ImagesAreSignedForDisplayAndKeepTheirObjectKey() {
     String key = "product/1_lamp/123e4567-e89b-12d3-a456-426614174000.png";
     Product product = owned(1, seller);
-    product.setImageUrl(key);
+    product.setImageUrls(List.of(key));
     when(products.findById(1L)).thenReturn(Optional.of(product));
     stubPrice();
     when(imageUploads.resolveImageUrl(key)).thenReturn("https://s3.example/signed-read");
 
     ProductResponse response = service.get(1L);
 
-    assertEquals("https://s3.example/signed-read", response.imageUrl());
-    assertEquals(key, response.imageKey());
+    assertEquals(new com.example.shop.web.Dtos.ProductImageResponse("https://s3.example/signed-read", key),
+        response.images().get(0));
   }
 
   @Test void returnsAllPrivateProductImagesInTheirSavedOrder() {
@@ -227,7 +228,6 @@ class ProductServiceTest {
     String secondKey = "product/1_lamp/123e4567-e89b-12d3-a456-426614174001.jpg";
     Product product = owned(1, seller);
     product.setImageUrls(List.of(firstKey, secondKey));
-    product.setImageUrl(firstKey);
     when(products.findById(1L)).thenReturn(Optional.of(product));
     stubPrice();
     when(imageUploads.resolveImageUrl(firstKey)).thenReturn("https://s3.example/first");
@@ -238,7 +238,20 @@ class ProductServiceTest {
     assertEquals(List.of(
         new com.example.shop.web.Dtos.ProductImageResponse("https://s3.example/first", firstKey),
         new com.example.shop.web.Dtos.ProductImageResponse("https://s3.example/second", secondKey)), response.images());
-    assertEquals("https://s3.example/first", response.imageUrl());
+  }
+
+  @Test void omitsPrivateImagesWhenS3StorageIsNotConfigured() {
+    String key = "product/1_lamp/123e4567-e89b-12d3-a456-426614174000.png";
+    Product product = owned(1, seller);
+    product.setImageUrls(List.of(key));
+    when(products.findById(1L)).thenReturn(Optional.of(product));
+    stubPrice();
+    when(imageUploads.isConfigured()).thenReturn(false);
+
+    ProductResponse response = service.get(1L);
+
+    assertTrue(response.images().isEmpty());
+    verify(imageUploads, never()).resolveImageUrl(key);
   }
 
   @Test void productWithoutASellerIsSoldByTheMarketplace() {
